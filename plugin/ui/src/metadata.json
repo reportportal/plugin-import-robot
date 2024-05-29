@@ -1,0 +1,11 @@
+{
+  "scope": "plugin_name",
+  "extensions": [
+    {
+      "name": "plugin",
+      "type": "uiExtension:settingsTab",
+      "title": "Plugin",
+      "moduleName": "./moduleName"
+    }
+  ]
+}

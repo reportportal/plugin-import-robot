@@ -1,0 +1,7 @@
+node_modules/*
+build
+package.json
+package-lock.json
+*.js
+src/**/*.scss
+src/**/*.css

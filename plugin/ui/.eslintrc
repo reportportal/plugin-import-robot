@@ -1,0 +1,52 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "extraFileExtensions": [".scss", ".css"],
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "plugins": [
+    "react",
+    "react-hooks",
+    "jsx-a11y",
+    "@typescript-eslint",
+    "simple-import-sort",
+    "prettier"
+  ],
+  "extends": ["airbnb", "airbnb-typescript/base", "plugin:react/recommended", "prettier"],
+  "root": true,
+  "rules": {
+    "import/prefer-default-export": "off",
+    "import/no-named-as-default": "off",
+    "import/newline-after-import": "off",
+    "import/no-extraneous-dependencies": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-filename-extension": [2, { "extensions": [".ts", ".tsx"] }],
+    "prettier/prettier": "error",
+    "react/function-component-definition": [
+      2,
+      { "namedComponents": "arrow-function", "unnamedComponents": "arrow-function" }
+    ],
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "react/prop-types": "off"
+  },
+  "settings": {
+    "import/resolver": {
+      "webpack": {
+        "config": "webpack.config.js"
+      }
+    },
+    "react": {
+      "version": "detect"
+    }
+  }
+}
