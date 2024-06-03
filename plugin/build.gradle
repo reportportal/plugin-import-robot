@@ -41,10 +41,12 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:fa04c1f'
-        implementation 'com.github.reportportal:plugin-api:20ab960'
-        annotationProcessor 'com.github.reportportal:plugin-api:20ab960'
+        implementation 'com.github.reportportal:commons-dao:073aa93'
+        implementation 'com.github.reportportal:commons:a30c7bb'
+        implementation 'com.github.reportportal:plugin-api:ff54d0f'
+        annotationProcessor 'com.github.reportportal:plugin-api:ff54d0f'
     }
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.7'
 }
 
 spotbugs {
