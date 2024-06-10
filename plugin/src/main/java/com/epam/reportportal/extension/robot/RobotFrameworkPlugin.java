@@ -1,4 +1,4 @@
-package com.epam.reportportal.extension.template;
+package com.epam.reportportal.extension.robot;
 
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;

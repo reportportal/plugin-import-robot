@@ -1,4 +1,4 @@
-package com.epam.reportportal.extension.template.event.handler;
+package com.epam.reportportal.extension.robot.event.handler;
 
 /**
  * @author Andrei Piankouski

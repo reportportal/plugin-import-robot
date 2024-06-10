@@ -1,11 +1,8 @@
-import com.github.spotbugs.SpotBugsTask
-
 plugins {
     id "io.spring.dependency-management" version "1.0.9.RELEASE"
     id 'java'
     id 'jacoco'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
-    id "com.github.spotbugs" version "3.0.0"
     id "com.moowork.node" version "1.3.1"
 }
 
@@ -41,23 +38,19 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:073aa93'
-        implementation 'com.github.reportportal:commons:a30c7bb'
+        implementation 'com.github.reportportal:commons-dao:b0e00d6'
+        implementation 'com.github.reportportal:commons:916f0f8'
         implementation 'com.github.reportportal:plugin-api:ff54d0f'
         annotationProcessor 'com.github.reportportal:plugin-api:ff54d0f'
     }
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.7'
-}
+    implementation 'org.hibernate:hibernate-core:5.4.18.Final'
 
-spotbugs {
-    sourceSets = [sourceSets.main]
-    reportLevel = "high"
-}
-tasks.withType(SpotBugsTask) {
-    reports {
-        xml.enabled false
-        html.enabled true
-    }
+    // add lombok support
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
 test {
@@ -100,7 +93,7 @@ jar {
                 "Plugin-Id": "${pluginId}",
                 "Plugin-Version": "${project.version}",
                 "Plugin-Provider": "Report Portal",
-                "Plugin-Class": "com.epam.reportportal.extension.template.TemplatePlugin",
+                "Plugin-Class": "com.epam.reportportal.extension.robot.RobotFrameworkPlugin",
                 "Plugin-Service": "api"
         )
     }
@@ -139,5 +132,5 @@ task assemblePlugins(type: Copy) {
     dependsOn subprojects.assemblePlugin
 }
 
-compileJava.dependsOn npm_run_build
+//compileJava.dependsOn npm_run_build
 

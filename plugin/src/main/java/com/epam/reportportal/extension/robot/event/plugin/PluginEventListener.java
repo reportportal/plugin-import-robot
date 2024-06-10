@@ -1,7 +1,7 @@
-package com.epam.reportportal.extension.template.event.plugin;
+package com.epam.reportportal.extension.robot.event.plugin;
 
 import com.epam.reportportal.extension.event.PluginEvent;
-import com.epam.reportportal.extension.template.event.EventHandlerFactory;
+import com.epam.reportportal.extension.robot.event.EventHandlerFactory;
 import org.springframework.context.ApplicationListener;
 
 import static java.util.Optional.ofNullable;

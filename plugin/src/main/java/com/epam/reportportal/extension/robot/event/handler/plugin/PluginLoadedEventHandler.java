@@ -1,8 +1,8 @@
-package com.epam.reportportal.extension.template.event.handler.plugin;
+package com.epam.reportportal.extension.robot.event.handler.plugin;
 
 import com.epam.reportportal.extension.event.PluginEvent;
-import com.epam.reportportal.extension.template.RobotFrameworkPluginExtension;
-import com.epam.reportportal.extension.template.event.handler.EventHandler;
+import com.epam.reportportal.extension.robot.RobotFrameworkPluginExtension;
+import com.epam.reportportal.extension.robot.event.handler.EventHandler;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.IntegrationRepository;
@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +56,7 @@ public class PluginLoadedEventHandler implements EventHandler<PluginEvent> {
 			Integration integration = new Integration();
 			integration.setName(name);
 			integration.setType(integrationType);
-			integration.setCreationDate(LocalDateTime.now());
+			integration.setCreationDate(Instant.now());
 			integration.setEnabled(true);
 			integration.setCreator("SYSTEM");
 			integration.setParams(new IntegrationParams(new HashMap<>()));

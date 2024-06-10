@@ -1,4 +1,4 @@
-package com.epam.reportportal.extension.template;
+package com.epam.reportportal.extension.robot;
 
 import com.epam.reportportal.extension.CommonPluginCommand;
 import com.epam.reportportal.extension.IntegrationGroupEnum;
@@ -6,11 +6,13 @@ import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
 import com.epam.reportportal.extension.common.IntegrationTypeProperties;
 import com.epam.reportportal.extension.event.PluginEvent;
-import com.epam.reportportal.extension.template.command.RobotImportCommand;
-import com.epam.reportportal.extension.template.event.plugin.PluginEventHandlerFactory;
-import com.epam.reportportal.extension.template.event.plugin.PluginEventListener;
-import com.epam.reportportal.extension.template.utils.MemoizingSupplier;
+import com.epam.reportportal.extension.robot.command.RobotImportCommand;
+import com.epam.reportportal.extension.robot.event.plugin.PluginEventHandlerFactory;
+import com.epam.reportportal.extension.robot.event.plugin.PluginEventListener;
+import com.epam.reportportal.extension.robot.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
+import com.epam.reportportal.rules.exception.ErrorType;
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.IntegrationRepository;
 import com.epam.ta.reportportal.dao.IntegrationTypeRepository;
 import com.epam.ta.reportportal.dao.LaunchRepository;
@@ -23,6 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.pf4j.Extension;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,9 +69,6 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
-
-  @Autowired
-  private LogRepository logRepository;
 
   @Autowired
   private ApplicationContext applicationContext;
