@@ -3,6 +3,7 @@ package com.epam.reportportal.extension.robot.service;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ARG;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_END_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_GENERATED;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_HTML;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LEVEL;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LIBRARY;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LINE;
@@ -20,6 +21,7 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.SUITE
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TAG;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TEST;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.fromString;
+import static java.lang.Boolean.TRUE;
 import static org.springframework.http.MediaType.IMAGE_GIF_VALUE;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
@@ -44,29 +46,39 @@ import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
 import com.google.api.client.util.Lists;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+@Slf4j
 @Getter
 public class RobotXmlParser {
 
@@ -91,7 +103,7 @@ public class RobotXmlParser {
     this.launchUuid = launchUuid;
     this.projectName = projectName;
     this.lowestTime = Instant.now();
-    this.highestTime = Instant.now();
+    this.highestTime = Instant.EPOCH;
   }
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
@@ -100,7 +112,7 @@ public class RobotXmlParser {
     this.launchUuid = launchUuid;
     this.projectName = projectName;
     this.lowestTime = Instant.now();
-    this.highestTime = Instant.now();
+    this.highestTime = Instant.EPOCH;
     this.zipFile = rootZipFile;
   }
 
@@ -226,9 +238,9 @@ public class RobotXmlParser {
     saveLogRQ.setItemUuid(items.peek().getUuid());
 
     MultipartFile multipartFile = null;
-//    if (Objects.equals(element.getAttribute(ATTR_LEVEL.val()), TRUE.toString())) {
-//      multipartFile = getImageMultipartFile(msg);
-//    }
+    if (Objects.equals(element.getAttribute(ATTR_HTML.val()), TRUE.toString())) {
+      multipartFile = getImageMultipartFile(msg);
+    }
     eventPublisher.publishEvent(new SaveLogRqEvent(this, projectName, saveLogRQ, multipartFile));
 
   }
@@ -349,6 +361,49 @@ public class RobotXmlParser {
       }
     }
     return result;
+  }
+
+  @Nullable
+  private MultipartFile getImageMultipartFile(String msg) {
+    Matcher matcher = IMG_REGEX.matcher(msg);
+    if (matcher.find()) {
+      String imgName = matcher.group(1);
+      return findScreenshot(imgName).map(screen -> {
+        DiskFileItem fileItem = new DiskFileItem("file", screen.getContentType(), false,
+            screen.getName(),
+            screen.getContent().length, null);
+        try (OutputStream os = fileItem.getOutputStream()) {
+          os.write(screen.getContent());
+        } catch (IOException e) {
+          log.error(e.getMessage());
+        }
+        return fileItem;
+      }).map(CommonsMultipartFile::new).orElse(null);
+    }
+    return null;
+  }
+
+  private Optional<SaveLogRQ.File> findScreenshot(String imgName) {
+    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+    while (entries.hasMoreElements()) {
+      ZipEntry entry = entries.nextElement();
+      if (!entry.isDirectory() &&
+          Objects.equals(entry.getName(), imgName) &&
+          MediaTypeFactory.getMediaType(entry.getName()).isPresent() &&
+          SUPPORTED_IMAGE_CONTENT_TYPES.contains(
+              MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
+        try (InputStream inputStream = zipFile.getInputStream(entry)) {
+          final SaveLogRQ.File file = new SaveLogRQ.File();
+          file.setName(entry.getName());
+          file.setContentType(MediaTypeFactory.getMediaType(entry.getName()).get().toString());
+          file.setContent(inputStream.readAllBytes());
+          return Optional.of(file);
+        } catch (IOException e) {
+          log.error(e.getMessage());
+        }
+      }
+    }
+    return Optional.empty();
   }
 
 }

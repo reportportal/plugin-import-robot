@@ -26,12 +26,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import javax.xml.parsers.DocumentBuilder;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,55 +47,52 @@ public class ZipImportStrategy extends AbstractImportStrategy {
     super(eventPublisher, launchRepository);
   }
 
+
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    return null;
+    //copy of the launch's id to use it in catch block if something goes wrong
+    String launchUuid = null;
+    File zip = transferToTempFile(file);
+
+    try (ZipFile zipFile = new ZipFile(zip)) {
+      launchUuid = startLaunch(getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
+          projectName, zipFile);
+      zipFile.stream().filter(isFile.and(isXml))
+          .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
+      finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
+      updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      return launchUuid;
+    } catch (Exception e) {
+      e.printStackTrace();
+      updateBrokenLaunch(launchUuid);
+      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
+    } finally {
+      try {
+        Files.deleteIfExists(zip.getAbsoluteFile().toPath());
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
-  //
-//  @Override
-//  public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-//    //copy of the launch's id to use it in catch block if something goes wrong
-//    String savedLaunchUuid = null;
-//    File zip = transferToTempFile(file);
-//
-//    try (ZipFile zipFile = new ZipFile(zip)) {
-////      String launchUuid = startLaunch(getLaunchName(file, ZIP_EXTENSION), projectName, rq);
-////      savedLaunchUuid = launchUuid;
-//      finishLaunch(results.getLaunchUuid(), projectName, results);
-//      updateStartTime(results.getLaunchUuid(), results.getStartTime());
-//      savedLaunchUuid = results.getLaunchUuid();
-//      return results.getLaunchUuid();
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//      updateBrokenLaunch(savedLaunchUuid);
-//      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
-//    } finally {
-//      try {
-//        Files.deleteIfExists(zip.getAbsoluteFile().toPath());
-//      } catch (IOException e) {
-//        e.printStackTrace();
-//      }
-//    }
-//  }
-//
-//  private InputStream getEntryStream(ZipFile file, ZipEntry zipEntry) {
-//    try {
-//      return file.getInputStream(zipEntry);
-//    } catch (IOException e) {
-//      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, e.getMessage());
-//    }
-//  }
-//
-//  private File transferToTempFile(MultipartFile file) {
-//    try {
-//      File tmp = File.createTempFile(file.getOriginalFilename(),
-//          "." + FilenameUtils.getExtension(file.getOriginalFilename())
-//      );
-//      file.transferTo(tmp);
-//      return tmp;
-//    } catch (IOException e) {
-//      throw new ReportPortalException("Error during transferring multipart file.", e);
-//    }
-//  }
+  private InputStream getEntryStream(ZipFile file, ZipEntry zipEntry) {
+    try {
+      return file.getInputStream(zipEntry);
+    } catch (IOException e) {
+      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, e.getMessage());
+    }
+  }
+
+  private File transferToTempFile(MultipartFile file) {
+    try {
+      File tmp = File.createTempFile(file.getOriginalFilename(),
+          "." + FilenameUtils.getExtension(file.getOriginalFilename())
+      );
+      file.transferTo(tmp);
+      return tmp;
+    } catch (IOException e) {
+      throw new ReportPortalException("Error during transferring multipart file.", e);
+    }
+  }
 }
