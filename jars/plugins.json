@@ -1,0 +1,13 @@
+[
+  {
+    "id": "RobotFramework",
+    "description": "Reinforce you ReportPortal instance with RobotFramework import functionality and easily upload your log files right to ReportPortal.",
+    "releases": [
+      {
+        "version": "1.0.0",
+        "date": "Jun 11, 2024, 2:42:18 PM",
+        "url": "https://raw.githubusercontent.com/reportportal/plugin-import-robot/main/jars/plugin-import-robot-1.0.0-all.jar"
+      }
+    ]
+  }
+]
