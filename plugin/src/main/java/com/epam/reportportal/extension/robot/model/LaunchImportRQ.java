@@ -42,11 +42,11 @@ public class LaunchImportRQ {
     return startTime;
   }
 
-  public Mode getMode() {
-    return mode;
-  }
-
   public void setStartTime(Instant startTime) {
     this.startTime = startTime;
+  }
+
+  public Mode getMode() {
+    return mode;
   }
 }

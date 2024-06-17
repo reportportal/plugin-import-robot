@@ -47,12 +47,12 @@ public enum RobotReportTag {
     this.value = value;
   }
 
-  public final String val() {
-    return value;
-  }
-
   public static RobotReportTag fromString(String type) {
     return Arrays.stream(values()).filter(it -> it.val().equalsIgnoreCase(type)).findAny()
         .orElse(UNSUPPORTED);
+  }
+
+  public final String val() {
+    return value;
   }
 }

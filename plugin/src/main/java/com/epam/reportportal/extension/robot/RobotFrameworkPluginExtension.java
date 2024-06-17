@@ -1,5 +1,10 @@
 package com.epam.reportportal.extension.robot;
 
+import static com.epam.reportportal.extension.robot.command.RobotImportCommand.MAX_FILE_SIZE;
+import static com.epam.reportportal.extension.util.CommonConstants.DESCRIPTION_KEY;
+import static com.epam.reportportal.extension.util.CommonConstants.IS_INTEGRATIONS_ALLOWED;
+import static com.epam.reportportal.extension.util.CommonConstants.METADATA;
+
 import com.epam.reportportal.extension.CommonPluginCommand;
 import com.epam.reportportal.extension.IntegrationGroupEnum;
 import com.epam.reportportal.extension.PluginCommand;
@@ -11,23 +16,18 @@ import com.epam.reportportal.extension.robot.event.plugin.PluginEventHandlerFact
 import com.epam.reportportal.extension.robot.event.plugin.PluginEventListener;
 import com.epam.reportportal.extension.robot.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.IntegrationRepository;
 import com.epam.ta.reportportal.dao.IntegrationTypeRepository;
 import com.epam.ta.reportportal.dao.LaunchRepository;
-import com.epam.ta.reportportal.dao.LogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import org.pf4j.Extension;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,28 +48,19 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   private static final String DESCRIPTION = "Reinforce your ReportPortal instance with RobotFramework Import functionality and easily upload your log files right to ReportPortal.";
   private final Supplier<Map<String, PluginCommand>> pluginCommandMapping = new MemoizingSupplier<>(
       this::getCommands);
-
-  private final Supplier<Map<String, CommonPluginCommand<?>>> commonPluginCommandMapping = new MemoizingSupplier<>(
-      this::getCommonCommands);
-
   private final String resourcesDir;
-
   private final Supplier<ApplicationListener<PluginEvent>> pluginLoadedListener;
-
   private final RequestEntityConverter requestEntityConverter;
-
   @Autowired
   private IntegrationTypeRepository integrationTypeRepository;
-
   @Autowired
   private IntegrationRepository integrationRepository;
-
   @Autowired
   private LaunchRepository launchRepository;
-
   @Autowired
   private ApplicationEventPublisher eventPublisher;
-
+  private final Supplier<Map<String, CommonPluginCommand<?>>> commonPluginCommandMapping = new MemoizingSupplier<>(
+      this::getCommonCommands);
   @Autowired
   private ApplicationContext applicationContext;
 
@@ -119,6 +110,12 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
     Map<String, Object> params = new HashMap<>();
     params.put(ALLOWED_COMMANDS, new ArrayList<>(pluginCommandMapping.get().keySet()));
     params.put(COMMON_COMMANDS, new ArrayList<>(commonPluginCommandMapping.get().keySet()));
+    params.put(DESCRIPTION_KEY, DESCRIPTION);
+    params.put(METADATA, Map.of(IS_INTEGRATIONS_ALLOWED, false));
+    params.put("maxFileSize", MAX_FILE_SIZE);
+    params.put("acceptFileMimeTypes",
+        List.of("application/zip", "application/x-zip-compressed", "application/zip-compressed",
+            "application/xml", "text/xml"));
     return params;
   }
 

@@ -21,7 +21,8 @@ public class DocumentBuilderInitializer {
       dbf.setXIncludeAware(false);
       return dbf.newDocumentBuilder();
     } catch (ParserConfigurationException e) {
-      throw new ReportPortalException(ErrorType.PARSING_XML_ERROR, e.getMessage());
+      e.printStackTrace();
+      throw new ReportPortalException(ErrorType.PARSING_XML_ERROR, e);
     }
   }
 

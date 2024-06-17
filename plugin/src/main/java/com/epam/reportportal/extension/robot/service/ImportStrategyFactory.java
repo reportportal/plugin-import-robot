@@ -9,7 +9,6 @@ import com.epam.ta.reportportal.dao.LaunchRepository;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.xml.parsers.DocumentBuilder;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.context.ApplicationEventPublisher;
 

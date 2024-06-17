@@ -1,5 +1,6 @@
 package com.epam.reportportal.extension.robot.service;
 
+import static com.epam.reportportal.extension.robot.service.AbstractImportStrategy.cleanMessage;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ARG;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_END_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_GENERATED;
@@ -88,14 +89,13 @@ public class RobotXmlParser {
   private static final List<String> SUPPORTED_XML_ELEMENTS = List.of(ROBOT.val(), SUITE.val(),
       TEST.val(),
       KEYWORD.val(), MESSAGE.val());
-
-  private ZipFile zipFile;
   private final ApplicationEventPublisher eventPublisher;
   private final String launchUuid;
   private final String projectName;
+  private final Deque<ItemInfo> items = new ArrayDeque<>();
+  private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
-  private final Deque<ItemInfo> items = new ArrayDeque<>();
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
       String projectName) {
@@ -130,7 +130,9 @@ public class RobotXmlParser {
       traverseNodes(root);
 
     } catch (IOException | SAXException e) {
-      throw new ReportPortalException(ErrorType.UNCLASSIFIED_REPORT_PORTAL_ERROR, e.getMessage());
+      e.printStackTrace();
+      log.error(cleanMessage(e));
+      throw new ReportPortalException(ErrorType.UNCLASSIFIED_REPORT_PORTAL_ERROR, e);
     }
   }
 
@@ -366,7 +368,7 @@ public class RobotXmlParser {
   @Nullable
   private MultipartFile getImageMultipartFile(String msg) {
     Matcher matcher = IMG_REGEX.matcher(msg);
-    if (matcher.find()) {
+    if (matcher.find() && zipFile != null) {
       String imgName = matcher.group(1);
       return findScreenshot(imgName).map(screen -> {
         DiskFileItem fileItem = new DiskFileItem("file", screen.getContentType(), false,

@@ -33,7 +33,6 @@ import com.epam.ta.reportportal.ws.reporting.StartLaunchRQ;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -55,6 +54,19 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
       LaunchRepository launchRepository) {
     this.eventPublisher = eventPublisher;
     this.launchRepository = launchRepository;
+  }
+
+  /**
+   * Got a cause exception message if it has any.
+   *
+   * @param e Exception
+   * @return Clean exception message
+   */
+  public static String cleanMessage(Exception e) {
+    if (e.getCause() != null) {
+      return e.getCause().getMessage();
+    }
+    return e.getMessage();
   }
 
   protected String startLaunch(String launchName, String projectName, LaunchImportRQ rq) {
@@ -85,19 +97,6 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
             attribute -> SKIPPED_IS_NOT_ISSUE.equals(attribute.getKey()) && attribute.isSystem())
         .findAny().filter(itemAttributesRQ -> Boolean.parseBoolean(itemAttributesRQ.getValue()))
         .isPresent();
-  }
-
-  /**
-   * Got a cause exception message if it has any.
-   *
-   * @param e Exception
-   * @return Clean exception message
-   */
-  protected String cleanMessage(Exception e) {
-    if (e.getCause() != null) {
-      return e.getCause().getMessage();
-    }
-    return e.getMessage();
   }
 
   /*

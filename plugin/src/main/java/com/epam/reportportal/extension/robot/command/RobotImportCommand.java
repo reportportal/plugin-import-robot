@@ -22,7 +22,6 @@ import com.epam.ta.reportportal.ws.reporting.OperationCompletionRS;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.xml.parsers.DocumentBuilder;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 

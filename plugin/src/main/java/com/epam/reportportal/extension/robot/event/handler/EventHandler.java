@@ -5,5 +5,5 @@ package com.epam.reportportal.extension.robot.event.handler;
  */
 public interface EventHandler<T> {
 
-	void handle(T event);
+  void handle(T event);
 }
