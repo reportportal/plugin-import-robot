@@ -126,6 +126,10 @@ public class RobotXmlParser {
     try {
       Document document = documentBuilder.parse(inputStream);
       Element root = document.getDocumentElement();
+      if (!Objects.equals(ROBOT, fromString(root.getNodeName()))) {
+        throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
+            "Root node in xml file must be 'robot'");
+      }
       Instant generatedTime = DateUtils.parseDateAttribute(
           root.getAttribute(ATTR_GENERATED.val()));
       if (generatedTime.isBefore(lowestTime)) {
