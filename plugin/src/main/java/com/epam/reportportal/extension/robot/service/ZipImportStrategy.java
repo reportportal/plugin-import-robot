@@ -57,7 +57,7 @@ public class ZipImportStrategy extends AbstractImportStrategy {
     try (ZipFile zipFile = new ZipFile(zip)) {
       launchUuid = startLaunch(getLaunchName(file, ZIP_EXTENSION), projectName, rq);
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, zipFile);
+          projectName, zipFile, isSkippedNotIssue(rq.getAttributes()));
       zipFile.stream().filter(isFile.and(isXml))
           .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
       finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
