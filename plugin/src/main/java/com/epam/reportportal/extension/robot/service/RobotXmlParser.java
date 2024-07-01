@@ -22,6 +22,7 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.SUITE
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TAG;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TEST;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.fromString;
+import static com.epam.ta.reportportal.entity.enums.TestItemIssueGroup.NOT_ISSUE_FLAG;
 import static java.lang.Boolean.TRUE;
 import static org.springframework.http.MediaType.IMAGE_GIF_VALUE;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
@@ -41,6 +42,7 @@ import com.epam.ta.reportportal.entity.enums.LogLevel;
 import com.epam.ta.reportportal.entity.enums.StatusEnum;
 import com.epam.ta.reportportal.entity.enums.TestItemTypeEnum;
 import com.epam.ta.reportportal.ws.reporting.FinishTestItemRQ;
+import com.epam.ta.reportportal.ws.reporting.Issue;
 import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
 import com.epam.ta.reportportal.ws.reporting.SaveLogRQ;
 import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
@@ -96,24 +98,27 @@ public class RobotXmlParser {
   private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
+  private boolean isSkippedNotIssue;
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
-      String projectName) {
+      String projectName, boolean isSkippedNotIssue) {
     this.eventPublisher = eventPublisher;
     this.launchUuid = launchUuid;
     this.projectName = projectName;
     this.lowestTime = Instant.now();
     this.highestTime = Instant.EPOCH;
+    this.isSkippedNotIssue = isSkippedNotIssue;
   }
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
-      String projectName, ZipFile rootZipFile) {
+      String projectName, ZipFile rootZipFile, boolean isSkippedNotIssue) {
     this.eventPublisher = eventPublisher;
     this.launchUuid = launchUuid;
     this.projectName = projectName;
     this.lowestTime = Instant.now();
     this.highestTime = Instant.EPOCH;
     this.zipFile = rootZipFile;
+    this.isSkippedNotIssue = isSkippedNotIssue;
   }
 
   public void parse(InputStream inputStream) {
@@ -278,6 +283,7 @@ public class RobotXmlParser {
     ItemInfo itemInfo = items.poll();
     if (itemInfo != null) {
       final FinishTestItemRQ rq = new FinishTestItemRQ();
+      markAsNotIssue(rq, itemInfo.getStatus());
       rq.setStatus(itemInfo.getStatus().name());
       rq.setEndTime(itemInfo.getEndTime());
       eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
@@ -406,6 +412,14 @@ public class RobotXmlParser {
       }
     }
     return Optional.empty();
+  }
+
+  private void markAsNotIssue(FinishTestItemRQ rq, StatusEnum status) {
+    if (StatusEnum.SKIPPED.equals(status) && isSkippedNotIssue) {
+      Issue issue = new Issue();
+      issue.setIssueType(NOT_ISSUE_FLAG.getValue());
+      rq.setIssue(issue);
+    }
   }
 
 }
