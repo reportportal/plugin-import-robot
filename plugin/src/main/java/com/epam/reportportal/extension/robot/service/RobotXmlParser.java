@@ -46,7 +46,7 @@ import com.epam.ta.reportportal.ws.reporting.Issue;
 import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
 import com.epam.ta.reportportal.ws.reporting.SaveLogRQ;
 import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
-import com.google.api.client.util.Lists;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -98,7 +98,7 @@ public class RobotXmlParser {
   private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
-  private boolean isSkippedNotIssue;
+  private final boolean isSkippedNotIssue;
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
       String projectName, boolean isSkippedNotIssue) {
@@ -126,9 +126,9 @@ public class RobotXmlParser {
     try {
       Document document = documentBuilder.parse(inputStream);
       Element root = document.getDocumentElement();
-      if (!Objects.equals(ROBOT, fromString(root.getNodeName()))) {
+      if (!Lists.newArrayList(ROBOT, SUITE).contains(fromString(root.getNodeName()))) {
         throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
-            "Root node in xml file must be 'robot'");
+            "Root node in robot xml file must be 'robot' or 'suite'");
       }
       Instant generatedTime = DateUtils.parseDateAttribute(
           root.getAttribute(ATTR_GENERATED.val()));
