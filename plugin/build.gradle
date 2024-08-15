@@ -38,10 +38,10 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:b0e00d6'
-        implementation 'com.github.reportportal:commons:916f0f8'
-        implementation 'com.github.reportportal:plugin-api:ff54d0f'
-        annotationProcessor 'com.github.reportportal:plugin-api:ff54d0f'
+        implementation 'com.github.reportportal:commons-dao:28d0461'
+        implementation 'com.github.reportportal:commons:a30c7bb'
+        implementation 'com.github.reportportal:plugin-api:a9a8b73'
+        annotationProcessor 'com.github.reportportal:plugin-api:a9a8b73'
     }
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.7'
     implementation 'org.hibernate:hibernate-core:5.4.18.Final'
