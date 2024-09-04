@@ -32,16 +32,23 @@ repositories {
     }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + '5.12.1' : 'com.epam.reportportal:commons-bom:5.12.1')
+    }
+}
+
 dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:commons-dao'
+        implementation 'com.epam.reportportal:commons'
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:28d0461'
-        implementation 'com.github.reportportal:commons:a30c7bb'
-        implementation 'com.github.reportportal:plugin-api:a9a8b73'
-        annotationProcessor 'com.github.reportportal:plugin-api:a9a8b73'
+        implementation 'com.github.reportportal:commons-dao:acf1ec7'
+        implementation 'com.github.reportportal:commons:c8ef09c'
+        implementation 'com.github.reportportal:plugin-api:188792e'
+        annotationProcessor 'com.github.reportportal:plugin-api:188792e'
     }
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.12.7'
     implementation 'org.hibernate:hibernate-core:5.4.18.Final'
