@@ -2,7 +2,6 @@ plugins {
     id "io.spring.dependency-management" version "1.0.9.RELEASE"
     id 'java'
     id 'jacoco'
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
     id "com.moowork.node" version "1.3.1"
 }
 
@@ -23,6 +22,8 @@ npm_run_build {
 }
 
 apply from: 'project-properties.gradle'
+apply from: scriptsUrl + '/release-fat.gradle'
+apply from: scriptsUrl + '/signing.gradle'
 
 repositories {
     mavenLocal()
