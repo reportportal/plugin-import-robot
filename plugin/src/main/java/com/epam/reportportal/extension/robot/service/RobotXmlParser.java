@@ -243,6 +243,7 @@ public class RobotXmlParser {
     LogLevel level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
 
     SaveLogRQ saveLogRQ = new SaveLogRQ();
+    saveLogRQ.setLaunchUuid(launchUuid);
     saveLogRQ.setLevel(level.name());
     saveLogRQ.setLogTime(logTime);
     saveLogRQ.setMessage(msg.trim());
@@ -288,6 +289,7 @@ public class RobotXmlParser {
     if (itemInfo != null) {
       final FinishTestItemRQ rq = new FinishTestItemRQ();
       markAsNotIssue(rq, itemInfo.getStatus());
+      rq.setLaunchUuid(launchUuid);
       rq.setStatus(itemInfo.getStatus().name());
       rq.setEndTime(itemInfo.getEndTime());
       eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
