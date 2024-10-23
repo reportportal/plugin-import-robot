@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * @author <a href="mailto:ivan_budayeu@epam.com">Ivan Budayeu</a>
  */
+@Slf4j
 public class ZipImportStrategy extends AbstractImportStrategy {
 
   private static final Predicate<ZipEntry> isFile = zipEntry -> !zipEntry.isDirectory();
@@ -64,14 +67,15 @@ public class ZipImportStrategy extends AbstractImportStrategy {
       updateStartTime(launchUuid, robotXmlParser.getLowestTime());
       return launchUuid;
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error(cleanMessage(e));
+      log.info("Exception during launch import for launch '{}'", launchUuid);
       updateBrokenLaunch(launchUuid);
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     } finally {
       try {
         Files.deleteIfExists(zip.getAbsoluteFile().toPath());
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error(cleanMessage(e));
       }
     }
   }
