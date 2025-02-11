@@ -49,7 +49,6 @@ import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -69,12 +68,11 @@ import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaTypeFactory;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -380,22 +378,12 @@ public class RobotXmlParser {
     Matcher matcher = IMG_REGEX.matcher(msg);
     if (matcher.find() && zipFile != null) {
       String imgName = matcher.group(1);
-      return findScreenshot(imgName).map(screen -> {
-        DiskFileItem fileItem = new DiskFileItem("file", screen.getContentType(), false,
-            screen.getName(),
-            screen.getContent().length, null);
-        try (OutputStream os = fileItem.getOutputStream()) {
-          os.write(screen.getContent());
-        } catch (IOException e) {
-          log.error(e.getMessage());
-        }
-        return fileItem;
-      }).map(CommonsMultipartFile::new).orElse(null);
+      return findScreenshot(imgName).orElse(null);
     }
     return null;
   }
 
-  private Optional<SaveLogRQ.File> findScreenshot(String imgName) {
+  private Optional<MultipartFile> findScreenshot(String imgName) {
     Enumeration<? extends ZipEntry> entries = zipFile.entries();
     while (entries.hasMoreElements()) {
       ZipEntry entry = entries.nextElement();
@@ -405,10 +393,10 @@ public class RobotXmlParser {
           SUPPORTED_IMAGE_CONTENT_TYPES.contains(
               MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
         try (InputStream inputStream = zipFile.getInputStream(entry)) {
-          final SaveLogRQ.File file = new SaveLogRQ.File();
-          file.setName(entry.getName());
-          file.setContentType(MediaTypeFactory.getMediaType(entry.getName()).get().toString());
-          file.setContent(inputStream.readAllBytes());
+          MultipartFile file = new MockMultipartFile("file",
+              entry.getName(),
+              MediaTypeFactory.getMediaType(entry.getName()).get().toString(),
+              inputStream.readAllBytes());
           return Optional.of(file);
         } catch (IOException e) {
           log.error(e.getMessage());
