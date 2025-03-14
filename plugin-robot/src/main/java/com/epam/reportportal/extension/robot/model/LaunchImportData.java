@@ -25,24 +25,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class LaunchImportData {
 
-  @JsonProperty("id")
-  private String id;
+  @JsonProperty("uuid")
+  private String uuid;
 
-  @JsonProperty("name")
-  private String name;
-
-  @JsonProperty("number")
-  private Long number;
-
-  public void setId(String id) {
-    this.id = id;
+  public String getUuid() {
+    return uuid;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public void setNumber(Long number) {
-    this.number = number;
+  public void setUuid(String uuid) {
+    this.uuid = uuid;
   }
 }
