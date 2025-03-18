@@ -245,6 +245,7 @@ public class RobotXmlParser {
     saveLogRQ.setLogTime(logTime);
     saveLogRQ.setMessage(msg.trim());
     saveLogRQ.setItemUuid(items.peek().getUuid());
+    saveLogRQ.setLaunchUuid(launchUuid);
 
     MultipartFile multipartFile = null;
     if (Objects.equals(element.getAttribute(ATTR_HTML.val()), TRUE.toString())) {
@@ -288,6 +289,7 @@ public class RobotXmlParser {
       markAsNotIssue(rq, itemInfo.getStatus());
       rq.setStatus(itemInfo.getStatus().name());
       rq.setEndTime(itemInfo.getEndTime());
+      rq.setLaunchUuid(launchUuid);
       eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
       if (itemInfo.getEndTime().isAfter(highestTime)) {
         highestTime = itemInfo.getEndTime();

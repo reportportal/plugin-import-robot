@@ -86,18 +86,12 @@ public class RobotImportCommand implements CommonPluginCommand<OperationCompleti
     );
   }
 
-  private OperationCompletionRS prepareLaunchImportResponse(String launchId) {
-
-    var launch = launchRepository.findByUuid(launchId)
-        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND));
-
+  private OperationCompletionRS prepareLaunchImportResponse(String uuid) {
     var data = new LaunchImportData();
-    data.setId(launchId);
-    data.setName(launch.getName());
-    data.setNumber(launch.getNumber());
+    data.setUuid(uuid);
 
     var response = new LaunchImportCompletionRS();
-    response.setResultMessage("Launch with id = " + launchId + " is successfully imported.");
+    response.setResultMessage("Launch with id = " + uuid + " is successfully started to import.");
     response.setData(data);
 
     return response;
