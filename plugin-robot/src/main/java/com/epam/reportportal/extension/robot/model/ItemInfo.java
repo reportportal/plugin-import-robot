@@ -21,5 +21,6 @@ public class ItemInfo {
   private Set<ItemAttributesRQ> itemAttributes;
   private String testCaseId;
   private String codeReference;
+  private boolean hasStats = true;
 
 }
