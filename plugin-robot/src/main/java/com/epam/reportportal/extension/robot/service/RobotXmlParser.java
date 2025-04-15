@@ -210,6 +210,7 @@ public class RobotXmlParser {
     ItemInfo itemInfo = new ItemInfo();
     itemInfo.setType(resolveKeywordType(element));
     itemInfo.setName(resolveKeywordName(element));
+    itemInfo.setHasStats(false);
     updateWithDescription(element, itemInfo);
     updateWithStatusInfo(element, itemInfo);
     String uuid = startTestItem(itemInfo);
@@ -273,6 +274,7 @@ public class RobotXmlParser {
     rq.setUuid(UUID.randomUUID().toString());
     rq.setLaunchUuid(launchUuid);
     rq.setStartTime(itemInfo.getStartTime());
+    rq.setHasStats(itemInfo.isHasStats());
     rq.setType(itemInfo.getType().name());
     rq.setDescription(itemInfo.getDescription());
     rq.setName(itemInfo.getName());
