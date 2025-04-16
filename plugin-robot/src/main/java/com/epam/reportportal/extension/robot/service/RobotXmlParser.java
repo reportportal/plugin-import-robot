@@ -93,10 +93,10 @@ public class RobotXmlParser {
   private final String launchUuid;
   private final String projectName;
   private final Deque<ItemInfo> items = new ArrayDeque<>();
+  private final boolean isSkippedNotIssue;
   private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
-  private final boolean isSkippedNotIssue;
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
       String projectName, boolean isSkippedNotIssue) {
@@ -210,7 +210,9 @@ public class RobotXmlParser {
     ItemInfo itemInfo = new ItemInfo();
     itemInfo.setType(resolveKeywordType(element));
     itemInfo.setName(resolveKeywordName(element));
-    itemInfo.setHasStats(false);
+    if (TestItemTypeEnum.STEP.equals(itemInfo.getType())) {
+      itemInfo.setHasStats(false);
+    }
     updateWithDescription(element, itemInfo);
     updateWithStatusInfo(element, itemInfo);
     String uuid = startTestItem(itemInfo);
