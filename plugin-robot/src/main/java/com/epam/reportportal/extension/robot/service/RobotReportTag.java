@@ -24,6 +24,8 @@ public enum RobotReportTag {
   TEST("test"),
   MESSAGE("msg"),
   KEYWORD("kw"),
+  FOR("for"),
+  ITER("iter"),
   UNSUPPORTED("unsupported"),
   DOC("doc"),
   ARG("arg"),

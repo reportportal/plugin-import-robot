@@ -15,6 +15,8 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIMESTAMP;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TYPE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.DOC;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.FOR;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ITER;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.KEYWORD;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.MESSAGE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ROBOT;
@@ -89,7 +91,7 @@ public class RobotXmlParser {
   private static final List<String> SUPPORTED_IMAGE_CONTENT_TYPES = List.of(IMAGE_GIF_VALUE,
       IMAGE_JPEG_VALUE, IMAGE_PNG_VALUE);
   private static final List<String> SUPPORTED_XML_ELEMENTS = List.of(ROBOT.val(), SUITE.val(),
-      TEST.val(), KEYWORD.val(), MESSAGE.val());
+      TEST.val(), FOR.val(), ITER.val(), KEYWORD.val(), MESSAGE.val());
   private final ApplicationEventPublisher eventPublisher;
   private final String launchUuid;
   private final String projectName;
