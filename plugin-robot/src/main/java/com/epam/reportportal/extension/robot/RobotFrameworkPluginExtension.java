@@ -46,6 +46,11 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   public static final String BINARY_DATA_PROPERTIES_FILE_ID = "binary-data.properties";
   private static final String PLUGIN_ID = "RobotFramework";
   private static final String DESCRIPTION = "Reinforce your ReportPortal instance with RobotFramework Import functionality and easily upload your log files right to ReportPortal.";
+
+  private static final String NAME_FIELD = "name";
+
+  private static final String PLUGIN_NAME = "Robot Framework";
+
   private final Supplier<Map<String, PluginCommand>> pluginCommandMapping = new MemoizingSupplier<>(
       this::getCommands);
   private final String resourcesDir;
@@ -108,6 +113,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   @Override
   public Map<String, ?> getPluginParams() {
     Map<String, Object> params = new HashMap<>();
+    params.put(NAME_FIELD, PLUGIN_NAME);
     params.put(ALLOWED_COMMANDS, new ArrayList<>(pluginCommandMapping.get().keySet()));
     params.put(COMMON_COMMANDS, new ArrayList<>(commonPluginCommandMapping.get().keySet()));
     params.put(DESCRIPTION_KEY, DESCRIPTION);
