@@ -2,6 +2,7 @@ package com.epam.reportportal.extension.robot.service;
 
 import static com.epam.reportportal.extension.robot.service.AbstractImportStrategy.cleanMessage;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ARG;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_ELAPSED;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_END_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_GENERATED;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_HTML;
@@ -9,7 +10,9 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LIBRARY;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LINE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_NAME;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_OWNER;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_SOURCE;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_STATUS;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIMESTAMP;
@@ -312,14 +315,29 @@ public class RobotXmlParser {
     findChildNodeByName(element, ATTR_STATUS.val()).ifPresent(status -> {
       Element statusElement = (Element) status;
       StatusEnum rpStatus = RobotMapper.mapStatus(statusElement.getAttribute(ATTR_STATUS.val()));
-      Instant startTime = DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_START_TIME.val()));
-      Instant endTime = DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_END_TIME.val()));
+      Instant startTime = getStartTime(statusElement);
+      Instant endTime = getEndTime(statusElement);
       itemInfo.setStatus(rpStatus);
       itemInfo.setStartTime(startTime);
       itemInfo.setEndTime(endTime);
     });
+  }
+
+  private Instant getEndTime(Element statusElement) {
+    if (StringUtils.hasText(statusElement.getAttribute(ATTR_END_TIME.val()))) {
+      return DateUtils.parseDateAttribute(
+          statusElement.getAttribute(ATTR_END_TIME.val()));
+    }
+    return getStartTime(statusElement).plusSeconds(
+        Long.parseLong(statusElement.getAttribute(ATTR_ELAPSED.val())));
+  }
+
+  private Instant getStartTime(Element statusElement) {
+    if (StringUtils.hasText(statusElement.getAttribute(ATTR_START_TIME.val()))) {
+      return DateUtils.parseDateAttribute(
+          statusElement.getAttribute(ATTR_START_TIME.val()));
+    }
+    return DateUtils.parseDateAttribute(statusElement.getAttribute(ATTR_START.val()));
   }
 
   private void updateWithDescription(Element element, ItemInfo itemInfo) {
@@ -336,15 +354,23 @@ public class RobotXmlParser {
 
   private String resolveKeywordName(Element element) {
     StringBuilder name = new StringBuilder();
-    if (StringUtils.hasText(element.getAttribute(ATTR_LIBRARY.val()))) {
-      name.append(element.getAttribute(ATTR_LIBRARY.val())).append(".");
-    }
+    name.append(extractNamePart(element));
     name.append(element.getAttribute(ATTR_NAME.val()));
     List<Node> args = findChildNodes(element, ARG.val());
     name.append(" (");
     name.append(args.stream().map(Node::getTextContent).collect(Collectors.joining(", ")));
     name.append(")");
     return name.toString();
+  }
+
+  private String extractNamePart(Element element) {
+    if (StringUtils.hasText(element.getAttribute(ATTR_LIBRARY.val()))) {
+      return element.getAttribute(ATTR_LIBRARY.val()) + ".";
+    }
+    if (StringUtils.hasText(element.getAttribute(ATTR_OWNER.val()))) {
+      return element.getAttribute(ATTR_OWNER.val()) + ".";
+    }
+    return "";
   }
 
   private TestItemTypeEnum resolveKeywordType(Element element) {

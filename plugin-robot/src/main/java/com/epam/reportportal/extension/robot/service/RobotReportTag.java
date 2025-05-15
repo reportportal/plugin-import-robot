@@ -41,7 +41,13 @@ public enum RobotReportTag {
   ATTR_END_TIME("endtime"),
   ATTR_TIMESTAMP("timestamp"),
   ATTR_GENERATED("generated"),
-  ATTR_TYPE("type");
+  ATTR_TYPE("type"),
+
+  //RobotFramework attributes renamed in version 7
+  ATTR_OWNER("owner"),
+  ATTR_START("start"),
+  ATTR_ELAPSED("elapsed"),
+  ATTR_TIME("time");
 
   private final String value;
 

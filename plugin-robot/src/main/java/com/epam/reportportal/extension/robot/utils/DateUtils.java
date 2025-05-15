@@ -19,6 +19,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.util.StringUtils;
 
 /**
@@ -26,8 +29,10 @@ import org.springframework.util.StringUtils;
  */
 public final class DateUtils {
 
-  private final static DateTimeFormatter ROBOT_TIME_FORMATTER = DateTimeFormatter.ofPattern(
-      "yyyyMMdd HH:mm:ss.SSS");
+  private static final List<DateTimeFormatter> ROBOT_DATE_FORMATTERS = Arrays.asList(
+      DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS"),
+      DateTimeFormatter.ofPattern("yyyy‑MM‑dd'T'HH:mm:ss.SSSSSS")
+  );
 
   private DateUtils() {
     //static only
@@ -49,7 +54,12 @@ public final class DateUtils {
 
   public static Instant parseDateAttribute(String attribute) {
     if (StringUtils.hasText(attribute)) {
-      return LocalDateTime.parse(attribute, ROBOT_TIME_FORMATTER).toInstant(ZoneOffset.UTC);
+      for (DateTimeFormatter formatter : ROBOT_DATE_FORMATTERS) {
+        try {
+          return LocalDateTime.parse(attribute, formatter).toInstant(ZoneOffset.UTC);
+        } catch (DateTimeParseException ignored) {
+        }
+      }
     }
     return Instant.MIN;
   }
