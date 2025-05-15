@@ -165,20 +165,12 @@ public class RobotXmlParser {
     if (node.getNodeType() == Node.ELEMENT_NODE) {
       final Element element = (Element) node;
       switch (fromString(element.getNodeName())) {
-        case SUITE:
-          items.push(handleSuiteElement(element));
-          break;
-        case KEYWORD:
-          items.push(handleKeywordElement(element));
-          break;
-        case TEST:
-          items.push(handleTestElement(element));
-          break;
-        case MESSAGE:
-          handleMsgElement(element);
-          break;
-        default:
-          break;
+        case SUITE -> items.push(handleSuiteElement(element));
+        case KEYWORD -> items.push(handleKeywordElement(element));
+        case TEST -> items.push(handleTestElement(element));
+        case MESSAGE -> handleMsgElement(element);
+        default -> {
+        }
       }
     }
   }
@@ -187,13 +179,9 @@ public class RobotXmlParser {
     if (node.getNodeType() == Node.ELEMENT_NODE) {
       final Element element = (Element) node;
       switch (fromString(element.getNodeName())) {
-        case SUITE:
-        case KEYWORD:
-        case TEST:
-          finishTestItem();
-          break;
-        default:
-          break;
+        case SUITE, KEYWORD, TEST -> finishTestItem();
+        default -> {
+        }
       }
     }
   }
@@ -202,7 +190,7 @@ public class RobotXmlParser {
     ItemInfo itemInfo = new ItemInfo();
     String sourceAttribute = element.getAttribute(ATTR_SOURCE.val());
     itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("/")));
-    itemInfo.setName(Optional.ofNullable(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
+    itemInfo.setName(Optional.of(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
     itemInfo.setType(TestItemTypeEnum.SUITE);
     updateWithStatusInfo(element, itemInfo);
     updateWithDescription(element, itemInfo);

@@ -38,20 +38,6 @@ public final class DateUtils {
     //static only
   }
 
-  /**
-   * Converts string representation of seconds to millis
-   *
-   * @param duration String seconds
-   * @return long millis
-   */
-  public static long toMillis(String duration) {
-    if (null != duration) {
-      Double value = Double.valueOf(duration) * 1000;
-      return value.longValue();
-    }
-    return 0;
-  }
-
   public static Instant parseDateAttribute(String attribute) {
     if (StringUtils.hasText(attribute)) {
       for (DateTimeFormatter formatter : ROBOT_DATE_FORMATTERS) {
