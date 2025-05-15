@@ -15,6 +15,7 @@
  */
 package com.epam.reportportal.extension.robot.utils;
 
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -31,7 +32,7 @@ public final class DateUtils {
 
   private static final List<DateTimeFormatter> ROBOT_DATE_FORMATTERS = Arrays.asList(
       DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS"),
-      DateTimeFormatter.ofPattern("yyyy‑MM‑dd'T'HH:mm:ss.SSSSSS")
+      DateTimeFormatter.ISO_LOCAL_DATE_TIME
   );
 
   private DateUtils() {

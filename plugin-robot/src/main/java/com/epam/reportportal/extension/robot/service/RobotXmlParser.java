@@ -15,6 +15,7 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_STATUS;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIMESTAMP;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TYPE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.DOC;
@@ -43,7 +44,6 @@ import com.epam.reportportal.extension.robot.utils.DocumentBuilderInitializer;
 import com.epam.reportportal.extension.robot.utils.RobotMapper;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.entity.enums.LogLevel;
 import com.epam.ta.reportportal.entity.enums.StatusEnum;
 import com.epam.ta.reportportal.entity.enums.TestItemTypeEnum;
 import com.epam.ta.reportportal.ws.reporting.FinishTestItemRQ;
@@ -134,7 +134,7 @@ public class RobotXmlParser {
         throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
             "Root node in robot xml file must be 'robot' or 'suite'");
       }
-      Instant generatedTime = DateUtils.parseDateAttribute(root.getAttribute(ATTR_GENERATED.val()));
+      Instant generatedTime = parseDateAttribute(root, ATTR_GENERATED);
       if (generatedTime.isBefore(lowestTime)) {
         lowestTime = generatedTime;
       }
@@ -231,11 +231,11 @@ public class RobotXmlParser {
   }
 
   private void handleMsgElement(Element element) {
-    Instant logTime = DateUtils.parseDateAttribute(element.getAttribute(ATTR_TIMESTAMP.val()));
-    String msg = element.getTextContent();
-    LogLevel level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
+    var logTime = getLogTime(element);
+    var msg = element.getTextContent();
+    var level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
 
-    SaveLogRQ saveLogRQ = new SaveLogRQ();
+    var saveLogRQ = new SaveLogRQ();
     saveLogRQ.setLevel(level.name());
     saveLogRQ.setLogTime(logTime);
     saveLogRQ.setMessage(msg.trim());
@@ -304,28 +304,39 @@ public class RobotXmlParser {
       Element statusElement = (Element) status;
       StatusEnum rpStatus = RobotMapper.mapStatus(statusElement.getAttribute(ATTR_STATUS.val()));
       Instant startTime = getStartTime(statusElement);
-      Instant endTime = getEndTime(statusElement);
+      Instant endTime = getEndTime(startTime, statusElement);
       itemInfo.setStatus(rpStatus);
       itemInfo.setStartTime(startTime);
       itemInfo.setEndTime(endTime);
     });
   }
 
-  private Instant getEndTime(Element statusElement) {
-    if (StringUtils.hasText(statusElement.getAttribute(ATTR_END_TIME.val()))) {
-      return DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_END_TIME.val()));
+  private Instant parseDateAttribute(Element element, RobotReportTag dateAttribute) {
+    return DateUtils.parseDateAttribute(element.getAttribute(dateAttribute.val()));
+  }
+
+  private Instant getLogTime(Element element) {
+    if (StringUtils.hasText(element.getAttribute(ATTR_TIMESTAMP.val()))) {
+      return parseDateAttribute(element, ATTR_TIMESTAMP);
     }
-    return getStartTime(statusElement).plusSeconds(
-        Long.parseLong(statusElement.getAttribute(ATTR_ELAPSED.val())));
+    return parseDateAttribute(element, ATTR_TIME);
   }
 
   private Instant getStartTime(Element statusElement) {
     if (StringUtils.hasText(statusElement.getAttribute(ATTR_START_TIME.val()))) {
-      return DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_START_TIME.val()));
+      return parseDateAttribute(statusElement, ATTR_START_TIME);
     }
-    return DateUtils.parseDateAttribute(statusElement.getAttribute(ATTR_START.val()));
+    return parseDateAttribute(statusElement, ATTR_START);
+  }
+
+  private Instant getEndTime(Instant startTime, Element statusElement) {
+    if (StringUtils.hasText(statusElement.getAttribute(ATTR_END_TIME.val()))) {
+      return parseDateAttribute(statusElement, ATTR_END_TIME);
+    }
+    var elapsedTime = Double.parseDouble(statusElement.getAttribute(ATTR_ELAPSED.val()));
+    var elapsedSeconds = (long) elapsedTime;
+    long nanos = (long) ((elapsedTime - elapsedSeconds) * 1_000_000_000);
+    return startTime.plusSeconds(elapsedSeconds).plusNanos(nanos);
   }
 
   private void updateWithDescription(Element element, ItemInfo itemInfo) {
