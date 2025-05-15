@@ -20,6 +20,8 @@ import static java.util.Optional.ofNullable;
 
 import com.epam.reportportal.events.FinishLaunchRqEvent;
 import com.epam.reportportal.events.StartLaunchRqEvent;
+import com.epam.reportportal.rules.exception.ErrorType;
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import com.epam.ta.reportportal.entity.enums.StatusEnum;
@@ -102,22 +104,20 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
    * a default date if the launch is broken, time should be updated to not to broke
    * the statistics
    */
-  protected void updateBrokenLaunch(String uuid) {
-    var launch = getLaunch(uuid);
-    if (launch.isPresent()) {
-      launch.get().setStartTime(Instant.now());
-      launch.get().setStatus(StatusEnum.INTERRUPTED);
-      launchRepository.save(launch.get());
-    }
+  protected void updateBrokenLaunch(String launchUuid) {
+    Launch launch = launchRepository.findByUuid(launchUuid)
+        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND, launchUuid));
+    launch.setStartTime(Instant.now());
+    launch.setStatus(StatusEnum.INTERRUPTED);
+    launchRepository.save(launch);
   }
 
 
   protected void updateStartTime(String launchUuid, Instant startTime) {
-    Optional<Launch> launch = getLaunch(launchUuid);
-    if (launch.isPresent()) {
-      launch.get().setStartTime(startTime);
-      launchRepository.save(launch.get());
-    }
+    Launch launch = launchRepository.findByUuid(launchUuid)
+        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND, launchUuid));
+    launch.setStartTime(startTime);
+    launchRepository.save(launch);
   }
 
   protected String getLaunchName(MultipartFile file, String extension) {
