@@ -43,6 +43,10 @@ public class ZipImportStrategy extends AbstractImportStrategy {
   private static final Predicate<ZipEntry> isXml = zipEntry -> zipEntry.getName()
       .endsWith(XML_EXTENSION);
 
+  private static final Predicate<ZipEntry> isNotSystemDirectory = zipEntry -> !(zipEntry.getName()
+      .contains("_MACOSX") || zipEntry.getName()
+      .contains(".DS_Store"));
+
   public ZipImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
     super(eventPublisher, launchRepository);
@@ -59,7 +63,7 @@ public class ZipImportStrategy extends AbstractImportStrategy {
       launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
           projectName, zipFile, isSkippedNotIssue(rq.getAttributes()));
-      zipFile.stream().filter(isFile.and(isXml))
+      zipFile.stream().filter(isFile.and(isXml).and(isNotSystemDirectory))
           .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
       finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
       updateStartTime(launchUuid, robotXmlParser.getLowestTime());

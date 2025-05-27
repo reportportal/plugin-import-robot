@@ -15,10 +15,14 @@
  */
 package com.epam.reportportal.extension.robot.utils;
 
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.util.StringUtils;
 
 /**
@@ -26,30 +30,23 @@ import org.springframework.util.StringUtils;
  */
 public final class DateUtils {
 
-  private final static DateTimeFormatter ROBOT_TIME_FORMATTER = DateTimeFormatter.ofPattern(
-      "yyyyMMdd HH:mm:ss.SSS");
+  private static final List<DateTimeFormatter> ROBOT_DATE_FORMATTERS = Arrays.asList(
+      DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS"),
+      DateTimeFormatter.ISO_LOCAL_DATE_TIME
+  );
 
   private DateUtils() {
     //static only
   }
 
-  /**
-   * Converts string representation of seconds to millis
-   *
-   * @param duration String seconds
-   * @return long millis
-   */
-  public static long toMillis(String duration) {
-    if (null != duration) {
-      Double value = Double.valueOf(duration) * 1000;
-      return value.longValue();
-    }
-    return 0;
-  }
-
   public static Instant parseDateAttribute(String attribute) {
     if (StringUtils.hasText(attribute)) {
-      return LocalDateTime.parse(attribute, ROBOT_TIME_FORMATTER).toInstant(ZoneOffset.UTC);
+      for (DateTimeFormatter formatter : ROBOT_DATE_FORMATTERS) {
+        try {
+          return LocalDateTime.parse(attribute, formatter).toInstant(ZoneOffset.UTC);
+        } catch (DateTimeParseException ignored) {
+        }
+      }
     }
     return Instant.MIN;
   }
