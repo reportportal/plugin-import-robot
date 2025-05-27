@@ -40,7 +40,7 @@ jobs:
         run: |
           IFS=',' read -a files <<< '${{ env.PACKAGE_SUFFIXES }}'
           for f in ${files[@]}; do
-            export URL="${{ env.REPOSITORY_URL }}/${{ github.repository }}/${PACKAGE_PATH}/${ARTIFACT}/${{ github.event.inputs.version }}/${ARTIFACT}-${{ github.event.inputs.version }}${f}"
+            export URL="${{ env.REPOSITORY_URL }}/${{ github.repository }}/${PACKAGE_PATH}/${ARTIFACT}/${{ github.event.inputs.version }}/plugin-robot-${{ github.event.inputs.version }}${f}"
             echo "Downloading artifact: ${URL}"
             curl -f -u ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} -s -O -L "${URL}"
           done
