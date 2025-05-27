@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -42,6 +43,10 @@ public class ZipImportStrategy extends AbstractImportStrategy {
   private static final Predicate<ZipEntry> isXml = zipEntry -> zipEntry.getName()
       .endsWith(XML_EXTENSION);
 
+  private static final Predicate<ZipEntry> isNotSystemDirectory = zipEntry -> !(zipEntry.getName()
+      .contains("_MACOSX") || zipEntry.getName()
+      .contains(".DS_Store"));
+
   public ZipImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
     super(eventPublisher, launchRepository);
@@ -51,14 +56,14 @@ public class ZipImportStrategy extends AbstractImportStrategy {
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
     //copy of the launch's id to use it in catch block if something goes wrong
-    String launchUuid = null;
+    String launchUuid = UUID.randomUUID().toString();
     File zip = transferToTempFile(file);
 
     try (ZipFile zipFile = new ZipFile(zip)) {
-      launchUuid = startLaunch(getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
           projectName, zipFile, isSkippedNotIssue(rq.getAttributes()));
-      zipFile.stream().filter(isFile.and(isXml))
+      zipFile.stream().filter(isFile.and(isXml).and(isNotSystemDirectory))
           .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
       finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
       updateStartTime(launchUuid, robotXmlParser.getLowestTime());

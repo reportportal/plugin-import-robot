@@ -15,6 +15,8 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIMESTAMP;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TYPE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.DOC;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.FOR;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ITER;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.KEYWORD;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.MESSAGE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ROBOT;
@@ -45,11 +47,11 @@ import com.epam.ta.reportportal.ws.reporting.FinishTestItemRQ;
 import com.epam.ta.reportportal.ws.reporting.Issue;
 import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
 import com.epam.ta.reportportal.ws.reporting.SaveLogRQ;
+import com.epam.ta.reportportal.ws.reporting.SaveLogRQ.File;
 import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -69,12 +71,12 @@ import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -89,16 +91,15 @@ public class RobotXmlParser {
   private static final List<String> SUPPORTED_IMAGE_CONTENT_TYPES = List.of(IMAGE_GIF_VALUE,
       IMAGE_JPEG_VALUE, IMAGE_PNG_VALUE);
   private static final List<String> SUPPORTED_XML_ELEMENTS = List.of(ROBOT.val(), SUITE.val(),
-      TEST.val(),
-      KEYWORD.val(), MESSAGE.val());
+      TEST.val(), FOR.val(), ITER.val(), KEYWORD.val(), MESSAGE.val());
   private final ApplicationEventPublisher eventPublisher;
   private final String launchUuid;
   private final String projectName;
   private final Deque<ItemInfo> items = new ArrayDeque<>();
+  private final boolean isSkippedNotIssue;
   private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
-  private final boolean isSkippedNotIssue;
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
       String projectName, boolean isSkippedNotIssue) {
@@ -130,8 +131,7 @@ public class RobotXmlParser {
         throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
             "Root node in robot xml file must be 'robot' or 'suite'");
       }
-      Instant generatedTime = DateUtils.parseDateAttribute(
-          root.getAttribute(ATTR_GENERATED.val()));
+      Instant generatedTime = DateUtils.parseDateAttribute(root.getAttribute(ATTR_GENERATED.val()));
       if (generatedTime.isBefore(lowestTime)) {
         lowestTime = generatedTime;
       }
@@ -212,6 +212,9 @@ public class RobotXmlParser {
     ItemInfo itemInfo = new ItemInfo();
     itemInfo.setType(resolveKeywordType(element));
     itemInfo.setName(resolveKeywordName(element));
+    if (TestItemTypeEnum.STEP.equals(itemInfo.getType())) {
+      itemInfo.setHasStats(false);
+    }
     updateWithDescription(element, itemInfo);
     updateWithStatusInfo(element, itemInfo);
     String uuid = startTestItem(itemInfo);
@@ -237,8 +240,7 @@ public class RobotXmlParser {
   }
 
   private void handleMsgElement(Element element) {
-    Instant logTime = DateUtils.parseDateAttribute(
-        element.getAttribute(ATTR_TIMESTAMP.val()));
+    Instant logTime = DateUtils.parseDateAttribute(element.getAttribute(ATTR_TIMESTAMP.val()));
     String msg = element.getTextContent();
     LogLevel level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
 
@@ -247,10 +249,17 @@ public class RobotXmlParser {
     saveLogRQ.setLogTime(logTime);
     saveLogRQ.setMessage(msg.trim());
     saveLogRQ.setItemUuid(items.peek().getUuid());
+    saveLogRQ.setLaunchUuid(launchUuid);
 
     MultipartFile multipartFile = null;
     if (Objects.equals(element.getAttribute(ATTR_HTML.val()), TRUE.toString())) {
-      multipartFile = getImageMultipartFile(msg);
+      var file = getImageMultipartFile(msg);
+      if (file.isPresent()) {
+        saveLogRQ.setFile(file.get());
+        multipartFile = new MockMultipartFile("file", file.get().getName(),
+            MediaTypeFactory.getMediaType(file.get().getName()).orElse(MediaType.ALL).toString(),
+            file.get().getContent());
+      }
     }
     eventPublisher.publishEvent(new SaveLogRqEvent(this, projectName, saveLogRQ, multipartFile));
 
@@ -274,6 +283,7 @@ public class RobotXmlParser {
     rq.setUuid(UUID.randomUUID().toString());
     rq.setLaunchUuid(launchUuid);
     rq.setStartTime(itemInfo.getStartTime());
+    rq.setHasStats(itemInfo.isHasStats());
     rq.setType(itemInfo.getType().name());
     rq.setDescription(itemInfo.getDescription());
     rq.setName(itemInfo.getName());
@@ -290,6 +300,7 @@ public class RobotXmlParser {
       markAsNotIssue(rq, itemInfo.getStatus());
       rq.setStatus(itemInfo.getStatus().name());
       rq.setEndTime(itemInfo.getEndTime());
+      rq.setLaunchUuid(launchUuid);
       eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
       if (itemInfo.getEndTime().isAfter(highestTime)) {
         highestTime = itemInfo.getEndTime();
@@ -376,36 +387,25 @@ public class RobotXmlParser {
   }
 
   @Nullable
-  private MultipartFile getImageMultipartFile(String msg) {
+  private Optional<File> getImageMultipartFile(String msg) {
     Matcher matcher = IMG_REGEX.matcher(msg);
     if (matcher.find() && zipFile != null) {
       String imgName = matcher.group(1);
-      return findScreenshot(imgName).map(screen -> {
-        DiskFileItem fileItem = new DiskFileItem("file", screen.getContentType(), false,
-            screen.getName(),
-            screen.getContent().length, null);
-        try (OutputStream os = fileItem.getOutputStream()) {
-          os.write(screen.getContent());
-        } catch (IOException e) {
-          log.error(e.getMessage());
-        }
-        return fileItem;
-      }).map(CommonsMultipartFile::new).orElse(null);
+      return findScreenshot(imgName);
     }
-    return null;
+    return Optional.empty();
   }
 
-  private Optional<SaveLogRQ.File> findScreenshot(String imgName) {
+  private Optional<File> findScreenshot(String imgName) {
     Enumeration<? extends ZipEntry> entries = zipFile.entries();
     while (entries.hasMoreElements()) {
       ZipEntry entry = entries.nextElement();
-      if (!entry.isDirectory() &&
-          Objects.equals(entry.getName(), imgName) &&
-          MediaTypeFactory.getMediaType(entry.getName()).isPresent() &&
-          SUPPORTED_IMAGE_CONTENT_TYPES.contains(
-              MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
+      if (!entry.isDirectory() && Objects.equals(entry.getName(), imgName)
+          && MediaTypeFactory.getMediaType(entry.getName()).isPresent()
+          && SUPPORTED_IMAGE_CONTENT_TYPES.contains(
+          MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
         try (InputStream inputStream = zipFile.getInputStream(entry)) {
-          final SaveLogRQ.File file = new SaveLogRQ.File();
+          File file = new File();
           file.setName(entry.getName());
           file.setContentType(MediaTypeFactory.getMediaType(entry.getName()).get().toString());
           file.setContent(inputStream.readAllBytes());

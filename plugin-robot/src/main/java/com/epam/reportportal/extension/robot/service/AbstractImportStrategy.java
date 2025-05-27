@@ -20,9 +20,9 @@ import static java.util.Optional.ofNullable;
 
 import com.epam.reportportal.events.FinishLaunchRqEvent;
 import com.epam.reportportal.events.StartLaunchRqEvent;
-import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
+import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import com.epam.ta.reportportal.entity.enums.StatusEnum;
 import com.epam.ta.reportportal.entity.launch.Launch;
@@ -33,8 +33,8 @@ import com.epam.ta.reportportal.ws.reporting.StartLaunchRQ;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -69,11 +69,11 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
     return e.getMessage();
   }
 
-  protected String startLaunch(String launchName, String projectName, LaunchImportRQ rq) {
+  protected String startLaunch(String launchUuid, String launchName, String projectName,
+      LaunchImportRQ rq) {
     if (rq == null) {
       rq = new LaunchImportRQ();
     }
-    String launchUuid = UUID.randomUUID().toString();
     StartLaunchRQ startLaunchRQ = new StartLaunchRQ();
     startLaunchRQ.setUuid(launchUuid);
     startLaunchRQ.setStartTime(ofNullable(rq.getStartTime()).orElse(Instant.EPOCH));
@@ -104,20 +104,18 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
    * a default date if the launch is broken, time should be updated to not to broke
    * the statistics
    */
-  protected void updateBrokenLaunch(String savedLaunchId) {
-    if (savedLaunchId != null) {
-      Launch launch = launchRepository.findByUuid(savedLaunchId)
-          .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND));
-      launch.setStartTime(Instant.now());
-      launch.setStatus(StatusEnum.INTERRUPTED);
-      launchRepository.save(launch);
-    }
+  protected void updateBrokenLaunch(String launchUuid) {
+    Launch launch = launchRepository.findByUuid(launchUuid)
+        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND, launchUuid));
+    launch.setStartTime(Instant.now());
+    launch.setStatus(StatusEnum.INTERRUPTED);
+    launchRepository.save(launch);
   }
 
 
   protected void updateStartTime(String launchUuid, Instant startTime) {
-    final Launch launch = launchRepository.findByUuid(launchUuid)
-        .orElseThrow(() -> new ReportPortalException(ErrorType.NOT_FOUND));
+    Launch launch = launchRepository.findByUuid(launchUuid)
+        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND, launchUuid));
     launch.setStartTime(startTime);
     launchRepository.save(launch);
   }
@@ -127,4 +125,23 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
         .substring(0, file.getOriginalFilename().indexOf("." + extension));
   }
 
+  public Optional<Launch> getLaunch(String launchUuid) {
+    int maxRetries = 3;
+    int attempt = 0;
+    while (attempt < maxRetries) {
+      attempt++;
+      var launch = launchRepository.findByUuid(launchUuid);
+      if (launch.isEmpty()) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("Retry interrupted", ie);
+        }
+      } else {
+        return launch;
+      }
+    }
+    return Optional.empty();
+  }
 }

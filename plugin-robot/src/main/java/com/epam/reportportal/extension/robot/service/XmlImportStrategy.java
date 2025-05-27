@@ -23,7 +23,7 @@ import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import java.io.InputStream;
-import java.util.Optional;
+import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,9 +39,9 @@ public class XmlImportStrategy extends AbstractImportStrategy {
 
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    String launchUuid = null;
+    String launchUuid = UUID.randomUUID().toString();
     try (InputStream xmlStream = file.getInputStream()) {
-      launchUuid = startLaunch(getLaunchName(file, XML_EXTENSION), projectName, rq);
+      launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
           projectName, isSkippedNotIssue(rq.getAttributes()));
       robotXmlParser.parse(xmlStream);
@@ -50,7 +50,7 @@ public class XmlImportStrategy extends AbstractImportStrategy {
       return launchUuid;
     } catch (Exception e) {
       e.printStackTrace();
-      Optional.ofNullable(launchUuid).ifPresent(this::updateBrokenLaunch);
+      updateBrokenLaunch(launchUuid);
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     }
   }
