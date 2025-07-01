@@ -50,8 +50,8 @@ dependencies {
     } else {
         implementation 'com.github.reportportal:commons-dao:6298e53'
         implementation 'com.github.reportportal:commons:c7041ee'
-        implementation 'com.github.reportportal:plugin-api:8874441'
-        annotationProcessor 'com.github.reportportal:plugin-api:8874441'
+        implementation 'com.github.reportportal:plugin-api:a4324ce'
+        annotationProcessor 'com.github.reportportal:plugin-api:a4324ce'
     }
     implementation "org.springframework:spring-test"
     // add lombok support
