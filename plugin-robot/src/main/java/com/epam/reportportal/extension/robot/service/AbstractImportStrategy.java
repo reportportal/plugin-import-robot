@@ -87,7 +87,8 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
 
   protected void finishLaunch(String launchUuid, String projectName, Instant time) {
     FinishExecutionRQ finishExecutionRQ = new FinishExecutionRQ();
-    finishExecutionRQ.setEndTime(time);
+    var endTime = time.equals(Instant.EPOCH) ? Instant.now() : time;
+    finishExecutionRQ.setEndTime(endTime);
     eventPublisher.publishEvent(
         new FinishLaunchRqEvent(this, projectName, launchUuid, finishExecutionRQ));
   }

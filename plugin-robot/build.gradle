@@ -49,9 +49,9 @@ dependencies {
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
         implementation 'com.github.reportportal:commons-dao:6298e53'
-        implementation 'com.github.reportportal:commons:c7041ee'
-        implementation 'com.github.reportportal:plugin-api:8874441'
-        annotationProcessor 'com.github.reportportal:plugin-api:8874441'
+        implementation 'com.github.reportportal:commons:521968a5'
+        implementation 'com.github.reportportal:plugin-api:a4324ce'
+        annotationProcessor 'com.github.reportportal:plugin-api:a4324ce'
     }
     implementation "org.springframework:spring-test"
     // add lombok support
@@ -59,6 +59,8 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 test {
