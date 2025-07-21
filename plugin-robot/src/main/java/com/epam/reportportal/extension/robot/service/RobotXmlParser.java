@@ -425,7 +425,8 @@ public class RobotXmlParser {
     Enumeration<? extends ZipEntry> entries = zipFile.entries();
     while (entries.hasMoreElements()) {
       ZipEntry entry = entries.nextElement();
-      if (!entry.isDirectory() && Objects.equals(entry.getName(), imgName)
+      String fileName = entry.getName().substring(entry.getName().lastIndexOf('/') + 1);
+      if (!entry.isDirectory() && Objects.equals(fileName, imgName)
           && MediaTypeFactory.getMediaType(entry.getName()).isPresent()
           && SUPPORTED_IMAGE_CONTENT_TYPES.contains(
           MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
