@@ -2,6 +2,7 @@ package com.epam.reportportal.extension.robot.service;
 
 import static com.epam.reportportal.extension.robot.service.AbstractImportStrategy.cleanMessage;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ARG;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_ELAPSED;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_END_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_GENERATED;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_HTML;
@@ -9,9 +10,12 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LIBRARY;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_LINE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_NAME;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_OWNER;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_SOURCE;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_START_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_STATUS;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TIMESTAMP;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_TYPE;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.DOC;
@@ -40,7 +44,6 @@ import com.epam.reportportal.extension.robot.utils.DocumentBuilderInitializer;
 import com.epam.reportportal.extension.robot.utils.RobotMapper;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.entity.enums.LogLevel;
 import com.epam.ta.reportportal.entity.enums.StatusEnum;
 import com.epam.ta.reportportal.entity.enums.TestItemTypeEnum;
 import com.epam.ta.reportportal.ws.reporting.FinishTestItemRQ;
@@ -131,7 +134,7 @@ public class RobotXmlParser {
         throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
             "Root node in robot xml file must be 'robot' or 'suite'");
       }
-      Instant generatedTime = DateUtils.parseDateAttribute(root.getAttribute(ATTR_GENERATED.val()));
+      Instant generatedTime = parseDateAttribute(root, ATTR_GENERATED);
       if (generatedTime.isBefore(lowestTime)) {
         lowestTime = generatedTime;
       }
@@ -162,20 +165,12 @@ public class RobotXmlParser {
     if (node.getNodeType() == Node.ELEMENT_NODE) {
       final Element element = (Element) node;
       switch (fromString(element.getNodeName())) {
-        case SUITE:
-          items.push(handleSuiteElement(element));
-          break;
-        case KEYWORD:
-          items.push(handleKeywordElement(element));
-          break;
-        case TEST:
-          items.push(handleTestElement(element));
-          break;
-        case MESSAGE:
-          handleMsgElement(element);
-          break;
-        default:
-          break;
+        case SUITE -> items.push(handleSuiteElement(element));
+        case KEYWORD -> items.push(handleKeywordElement(element));
+        case TEST -> items.push(handleTestElement(element));
+        case MESSAGE -> handleMsgElement(element);
+        default -> {
+        }
       }
     }
   }
@@ -184,13 +179,9 @@ public class RobotXmlParser {
     if (node.getNodeType() == Node.ELEMENT_NODE) {
       final Element element = (Element) node;
       switch (fromString(element.getNodeName())) {
-        case SUITE:
-        case KEYWORD:
-        case TEST:
-          finishTestItem();
-          break;
-        default:
-          break;
+        case SUITE, KEYWORD, TEST -> finishTestItem();
+        default -> {
+        }
       }
     }
   }
@@ -199,7 +190,7 @@ public class RobotXmlParser {
     ItemInfo itemInfo = new ItemInfo();
     String sourceAttribute = element.getAttribute(ATTR_SOURCE.val());
     itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("/")));
-    itemInfo.setName(Optional.ofNullable(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
+    itemInfo.setName(Optional.of(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
     itemInfo.setType(TestItemTypeEnum.SUITE);
     updateWithStatusInfo(element, itemInfo);
     updateWithDescription(element, itemInfo);
@@ -240,11 +231,11 @@ public class RobotXmlParser {
   }
 
   private void handleMsgElement(Element element) {
-    Instant logTime = DateUtils.parseDateAttribute(element.getAttribute(ATTR_TIMESTAMP.val()));
-    String msg = element.getTextContent();
-    LogLevel level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
+    var logTime = getLogTime(element);
+    var msg = element.getTextContent();
+    var level = RobotMapper.mapLogLevel(element.getAttribute(ATTR_LEVEL.val()));
 
-    SaveLogRQ saveLogRQ = new SaveLogRQ();
+    var saveLogRQ = new SaveLogRQ();
     saveLogRQ.setLevel(level.name());
     saveLogRQ.setLogTime(logTime);
     saveLogRQ.setMessage(msg.trim());
@@ -312,14 +303,40 @@ public class RobotXmlParser {
     findChildNodeByName(element, ATTR_STATUS.val()).ifPresent(status -> {
       Element statusElement = (Element) status;
       StatusEnum rpStatus = RobotMapper.mapStatus(statusElement.getAttribute(ATTR_STATUS.val()));
-      Instant startTime = DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_START_TIME.val()));
-      Instant endTime = DateUtils.parseDateAttribute(
-          statusElement.getAttribute(ATTR_END_TIME.val()));
+      Instant startTime = getStartTime(statusElement);
+      Instant endTime = getEndTime(startTime, statusElement);
       itemInfo.setStatus(rpStatus);
       itemInfo.setStartTime(startTime);
       itemInfo.setEndTime(endTime);
     });
+  }
+
+  private Instant parseDateAttribute(Element element, RobotReportTag dateAttribute) {
+    return DateUtils.parseDateAttribute(element.getAttribute(dateAttribute.val()));
+  }
+
+  private Instant getLogTime(Element element) {
+    if (StringUtils.hasText(element.getAttribute(ATTR_TIMESTAMP.val()))) {
+      return parseDateAttribute(element, ATTR_TIMESTAMP);
+    }
+    return parseDateAttribute(element, ATTR_TIME);
+  }
+
+  private Instant getStartTime(Element statusElement) {
+    if (StringUtils.hasText(statusElement.getAttribute(ATTR_START_TIME.val()))) {
+      return parseDateAttribute(statusElement, ATTR_START_TIME);
+    }
+    return parseDateAttribute(statusElement, ATTR_START);
+  }
+
+  private Instant getEndTime(Instant startTime, Element statusElement) {
+    if (StringUtils.hasText(statusElement.getAttribute(ATTR_END_TIME.val()))) {
+      return parseDateAttribute(statusElement, ATTR_END_TIME);
+    }
+    var elapsedTime = Double.parseDouble(statusElement.getAttribute(ATTR_ELAPSED.val()));
+    var elapsedSeconds = (long) elapsedTime;
+    long nanos = (long) ((elapsedTime - elapsedSeconds) * 1_000_000_000);
+    return startTime.plusSeconds(elapsedSeconds).plusNanos(nanos);
   }
 
   private void updateWithDescription(Element element, ItemInfo itemInfo) {
@@ -336,15 +353,23 @@ public class RobotXmlParser {
 
   private String resolveKeywordName(Element element) {
     StringBuilder name = new StringBuilder();
-    if (StringUtils.hasText(element.getAttribute(ATTR_LIBRARY.val()))) {
-      name.append(element.getAttribute(ATTR_LIBRARY.val())).append(".");
-    }
+    name.append(extractNamePart(element));
     name.append(element.getAttribute(ATTR_NAME.val()));
     List<Node> args = findChildNodes(element, ARG.val());
     name.append(" (");
     name.append(args.stream().map(Node::getTextContent).collect(Collectors.joining(", ")));
     name.append(")");
     return name.toString();
+  }
+
+  private String extractNamePart(Element element) {
+    if (StringUtils.hasText(element.getAttribute(ATTR_LIBRARY.val()))) {
+      return element.getAttribute(ATTR_LIBRARY.val()) + ".";
+    }
+    if (StringUtils.hasText(element.getAttribute(ATTR_OWNER.val()))) {
+      return element.getAttribute(ATTR_OWNER.val()) + ".";
+    }
+    return "";
   }
 
   private TestItemTypeEnum resolveKeywordType(Element element) {
@@ -400,7 +425,8 @@ public class RobotXmlParser {
     Enumeration<? extends ZipEntry> entries = zipFile.entries();
     while (entries.hasMoreElements()) {
       ZipEntry entry = entries.nextElement();
-      if (!entry.isDirectory() && Objects.equals(entry.getName(), imgName)
+      String fileName = entry.getName().substring(entry.getName().lastIndexOf('/') + 1);
+      if (!entry.isDirectory() && Objects.equals(fileName, imgName)
           && MediaTypeFactory.getMediaType(entry.getName()).isPresent()
           && SUPPORTED_IMAGE_CONTENT_TYPES.contains(
           MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
