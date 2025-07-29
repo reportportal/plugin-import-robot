@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Set;
+import lombok.Getter;
 
+@Getter
 public class LaunchImportRQ {
 
   @JsonProperty(value = "name")
@@ -26,27 +28,4 @@ public class LaunchImportRQ {
   @JsonProperty("mode")
   private Mode mode;
 
-  public String getName() {
-    return name;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  public Set<ItemAttributesRQ> getAttributes() {
-    return attributes;
-  }
-
-  public Instant getStartTime() {
-    return startTime;
-  }
-
-  public void setStartTime(Instant startTime) {
-    this.startTime = startTime;
-  }
-
-  public Mode getMode() {
-    return mode;
-  }
 }

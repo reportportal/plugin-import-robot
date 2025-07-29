@@ -44,7 +44,9 @@ public class XmlImportStrategy extends AbstractImportStrategy {
       launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
           projectName, isSkippedNotIssue(rq.getAttributes()));
-      robotXmlParser.parse(xmlStream);
+      if (!file.isEmpty()) {
+        robotXmlParser.parse(xmlStream);
+      }
       finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
       updateStartTime(launchUuid, robotXmlParser.getLowestTime());
       return launchUuid;
