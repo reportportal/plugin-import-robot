@@ -186,18 +186,24 @@ public class RobotXmlParser {
     }
   }
 
-  private ItemInfo handleSuiteElement(Element element) {
-    ItemInfo itemInfo = new ItemInfo();
-    String sourceAttribute = element.getAttribute(ATTR_SOURCE.val());
-    itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("/")));
-    itemInfo.setName(Optional.of(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
-    itemInfo.setType(TestItemTypeEnum.SUITE);
-    updateWithStatusInfo(element, itemInfo);
-    updateWithDescription(element, itemInfo);
-    String uuid = items.peek() == null ? startRootItem(itemInfo) : startTestItem(itemInfo);
-    itemInfo.setUuid(uuid);
-    return itemInfo;
-  }
+    private ItemInfo handleSuiteElement(Element element) {
+        ItemInfo itemInfo = new ItemInfo();
+        String sourceAttribute = element.getAttribute(ATTR_SOURCE.val());
+        if (!sourceAttribute.isBlank()) {
+            if (sourceAttribute.contains("/")) {
+                itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("/")));
+            } else if (sourceAttribute.contains("\\")) {
+                itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("\\")));
+            }
+        }
+        itemInfo.setName(Optional.of(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
+        itemInfo.setType(TestItemTypeEnum.SUITE);
+        updateWithStatusInfo(element, itemInfo);
+        updateWithDescription(element, itemInfo);
+        String uuid = items.peek() == null ? startRootItem(itemInfo) : startTestItem(itemInfo);
+        itemInfo.setUuid(uuid);
+        return itemInfo;
+    }
 
   private ItemInfo handleKeywordElement(Element element) {
     ItemInfo itemInfo = new ItemInfo();
@@ -312,7 +318,11 @@ public class RobotXmlParser {
   }
 
   private Instant parseDateAttribute(Element element, RobotReportTag dateAttribute) {
-    return DateUtils.parseDateAttribute(element.getAttribute(dateAttribute.val()));
+      if (!element.getAttribute(dateAttribute.val()).matches("N/A")) {
+        return DateUtils.parseDateAttribute(element.getAttribute(dateAttribute.val()));
+      } else {
+          return Instant.now();
+      }
   }
 
   private Instant getLogTime(Element element) {
@@ -324,14 +334,24 @@ public class RobotXmlParser {
 
   private Instant getStartTime(Element statusElement) {
     if (StringUtils.hasText(statusElement.getAttribute(ATTR_START_TIME.val()))) {
-      return parseDateAttribute(statusElement, ATTR_START_TIME);
+        if (!statusElement.getAttribute(ATTR_START_TIME.val()).matches("N/A")) {
+            return parseDateAttribute(statusElement, ATTR_START_TIME);
+        }
+         else {
+            return Instant.now();
+         }
     }
     return parseDateAttribute(statusElement, ATTR_START);
   }
 
   private Instant getEndTime(Instant startTime, Element statusElement) {
     if (StringUtils.hasText(statusElement.getAttribute(ATTR_END_TIME.val()))) {
-      return parseDateAttribute(statusElement, ATTR_END_TIME);
+        if (!statusElement.getAttribute(ATTR_END_TIME.val()).matches("N/A")) {
+            return parseDateAttribute(statusElement, ATTR_END_TIME);
+        }
+        else {
+            return Instant.now();
+        }
     }
     var elapsedTime = Double.parseDouble(statusElement.getAttribute(ATTR_ELAPSED.val()));
     var elapsedSeconds = (long) elapsedTime;
