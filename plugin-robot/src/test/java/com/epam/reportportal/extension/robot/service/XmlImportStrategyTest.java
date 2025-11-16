@@ -22,10 +22,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.events.FinishLaunchRqEvent;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.ta.reportportal.dao.LaunchRepository;
-import com.epam.ta.reportportal.entity.launch.Launch;
+import com.epam.reportportal.infrastructure.events.FinishLaunchRqEvent;
+import com.epam.reportportal.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.infrastructure.persistence.entity.launch.Launch;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;

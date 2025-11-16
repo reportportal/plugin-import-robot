@@ -16,9 +16,9 @@ import com.epam.reportportal.extension.robot.event.plugin.PluginEventHandlerFact
 import com.epam.reportportal.extension.robot.event.plugin.PluginEventListener;
 import com.epam.reportportal.extension.robot.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.epam.ta.reportportal.dao.IntegrationRepository;
-import com.epam.ta.reportportal.dao.IntegrationTypeRepository;
-import com.epam.ta.reportportal.dao.LaunchRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.IntegrationRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.IntegrationTypeRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.LaunchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

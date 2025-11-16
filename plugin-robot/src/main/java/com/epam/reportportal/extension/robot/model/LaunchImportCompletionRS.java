@@ -16,7 +16,7 @@
 
 package com.epam.reportportal.extension.robot.model;
 
-import com.epam.ta.reportportal.ws.reporting.OperationCompletionRS;
+import com.epam.reportportal.reporting.OperationCompletionRS;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
