@@ -1,7 +1,7 @@
 package com.epam.reportportal.extension.robot.utils;
 
-import com.epam.ta.reportportal.entity.enums.LogLevel;
-import com.epam.ta.reportportal.entity.enums.StatusEnum;
+import com.epam.reportportal.infrastructure.persistence.entity.enums.LogLevel;
+import com.epam.reportportal.infrastructure.persistence.entity.enums.StatusEnum;
 
 public interface RobotMapper {
 

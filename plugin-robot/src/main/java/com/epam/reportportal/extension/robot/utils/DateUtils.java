@@ -15,7 +15,6 @@
  */
 package com.epam.reportportal.extension.robot.utils;
 
-import com.epam.reportportal.rules.exception.ReportPortalException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;

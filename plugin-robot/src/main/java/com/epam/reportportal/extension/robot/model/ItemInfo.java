@@ -1,8 +1,8 @@
 package com.epam.reportportal.extension.robot.model;
 
-import com.epam.ta.reportportal.entity.enums.StatusEnum;
-import com.epam.ta.reportportal.entity.enums.TestItemTypeEnum;
-import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
+import com.epam.reportportal.infrastructure.persistence.entity.enums.StatusEnum;
+import com.epam.reportportal.infrastructure.persistence.entity.enums.TestItemTypeEnum;
+import com.epam.reportportal.reporting.ItemAttributesRQ;
 import java.time.Instant;
 import java.util.Set;
 import lombok.Data;
