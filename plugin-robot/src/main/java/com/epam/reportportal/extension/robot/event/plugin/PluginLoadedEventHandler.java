@@ -1,10 +1,9 @@
-package com.epam.reportportal.extension.robot.event.handler.plugin;
+package com.epam.reportportal.extension.robot.event.plugin;
 
 import static java.util.Optional.ofNullable;
 
-import com.epam.reportportal.extension.event.PluginEvent;
+import com.epam.reportportal.core.events.domain.PluginUploadedEvent;
 import com.epam.reportportal.extension.robot.RobotFrameworkPluginExtension;
-import com.epam.reportportal.extension.robot.event.handler.EventHandler;
 import com.epam.reportportal.infrastructure.persistence.dao.IntegrationRepository;
 import com.epam.reportportal.infrastructure.persistence.dao.IntegrationTypeRepository;
 import com.epam.reportportal.infrastructure.persistence.entity.integration.Integration;
@@ -21,32 +20,44 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.springframework.context.ApplicationListener;
 
 /**
  * @author Andrei Piankouski
  */
-public class PluginLoadedEventHandler implements EventHandler<PluginEvent> {
+public class PluginLoadedEventHandler implements ApplicationListener<PluginUploadedEvent> {
 
   private static final String BINARY_DATA = "binaryData";
 
+  private final String pluginId;
   private final String resourcesDir;
   private final IntegrationTypeRepository integrationTypeRepository;
   private final IntegrationRepository integrationRepository;
 
-  public PluginLoadedEventHandler(String resourcesDir,
+  public PluginLoadedEventHandler(String pluginId, String resourcesDir,
       IntegrationTypeRepository integrationTypeRepository,
       IntegrationRepository integrationRepository) {
+    this.pluginId = pluginId;
     this.resourcesDir = resourcesDir;
     this.integrationTypeRepository = integrationTypeRepository;
     this.integrationRepository = integrationRepository;
   }
 
   @Override
-  public void handle(PluginEvent event) {
-    integrationTypeRepository.findByName(event.getPluginId()).ifPresent(integrationType -> {
-      createIntegration(event.getPluginId(), integrationType);
+  public void onApplicationEvent(PluginUploadedEvent event) {
+    if (!supports(event)) {
+      return;
+    }
+
+    String eventPluginId = event.getPluginActivityResource().getName();
+    integrationTypeRepository.findByName(eventPluginId).ifPresent(integrationType -> {
+      createIntegration(eventPluginId, integrationType);
       loadBinaryDataInfo(integrationType);
     });
+  }
+
+  private boolean supports(PluginUploadedEvent event) {
+    return pluginId.equals(event.getPluginActivityResource().getName());
   }
 
   private void createIntegration(String name, IntegrationType integrationType) {

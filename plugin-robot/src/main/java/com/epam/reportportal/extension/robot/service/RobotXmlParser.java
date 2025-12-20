@@ -252,20 +252,20 @@ public class RobotXmlParser {
             file.get().getContent());
       }
     }
-    eventPublisher.publishEvent(new SaveLogRqEvent(this, projectName, saveLogRQ, multipartFile));
+    eventPublisher.publishEvent(new SaveLogRqEvent(projectName, saveLogRQ, multipartFile));
 
   }
 
   private String startRootItem(ItemInfo suite) {
     StartTestItemRQ rq = buildStartItemRq(suite);
-    eventPublisher.publishEvent(new StartRootItemRqEvent(this, projectName, rq));
+    eventPublisher.publishEvent(new StartRootItemRqEvent(projectName, rq));
     return rq.getUuid();
   }
 
   private String startTestItem(ItemInfo itemInfo) {
     StartTestItemRQ rq = buildStartItemRq(itemInfo);
     eventPublisher.publishEvent(
-        new StartChildItemRqEvent(this, projectName, items.peek().getUuid(), rq));
+        new StartChildItemRqEvent(projectName, items.peek().getUuid(), rq));
     return rq.getUuid();
   }
 
@@ -292,7 +292,7 @@ public class RobotXmlParser {
       rq.setStatus(itemInfo.getStatus().name());
       rq.setEndTime(itemInfo.getEndTime());
       rq.setLaunchUuid(launchUuid);
-      eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
+      eventPublisher.publishEvent(new FinishItemRqEvent(projectName, itemInfo.getUuid(), rq));
       if (itemInfo.getEndTime().isAfter(highestTime)) {
         highestTime = itemInfo.getEndTime();
       }
