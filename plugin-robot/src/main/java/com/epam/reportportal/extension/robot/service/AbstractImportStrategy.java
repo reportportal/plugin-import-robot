@@ -81,7 +81,7 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
     ofNullable(rq.getDescription()).ifPresent(startLaunchRQ::setDescription);
     startLaunchRQ.setMode(ofNullable(rq.getMode()).orElse(Mode.DEFAULT));
     startLaunchRQ.setAttributes(ofNullable(rq.getAttributes()).orElse(new HashSet<>()));
-    eventPublisher.publishEvent(new StartLaunchRqEvent(this, projectName, startLaunchRQ));
+    eventPublisher.publishEvent(new StartLaunchRqEvent(projectName, startLaunchRQ));
     return launchUuid;
   }
 
@@ -90,7 +90,7 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
     var endTime = time.equals(Instant.EPOCH) ? Instant.now() : time;
     finishExecutionRQ.setEndTime(endTime);
     eventPublisher.publishEvent(
-        new FinishLaunchRqEvent(this, projectName, launchUuid, finishExecutionRQ));
+        new FinishLaunchRqEvent(projectName, launchUuid, finishExecutionRQ));
   }
 
   protected Boolean isSkippedNotIssue(Set<ItemAttributesRQ> attributes) {

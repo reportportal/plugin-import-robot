@@ -33,7 +33,8 @@ class ZipImportStrategyTest {
   @Test
   void importLaunch() throws IOException {
     when(launchRepository.findByUuid(any())).thenReturn(Optional.of(new Launch(1L)));
-    ArgumentCaptor<FinishLaunchRqEvent> eventArgumentCaptor = ArgumentCaptor.forClass(FinishLaunchRqEvent.class);
+    ArgumentCaptor<FinishLaunchRqEvent> eventArgumentCaptor = ArgumentCaptor.forClass(
+        FinishLaunchRqEvent.class);
 
     var file = new MockMultipartFile("file", "report.zip", "application/zip",
         getClass().getClassLoader().getResourceAsStream("report.zip"));
@@ -42,6 +43,7 @@ class ZipImportStrategyTest {
     importStrategy.importLaunch(file, "project-name", new LaunchImportRQ());
 
     verify(eventPublisher, times(1)).publishEvent(eventArgumentCaptor.capture());
-    assertNotEquals(Instant.EPOCH, eventArgumentCaptor.getValue().getFinishExecutionRQ().getEndTime());
+    assertNotEquals(Instant.EPOCH,
+        eventArgumentCaptor.getValue().getFinishExecutionRq().getEndTime());
   }
 }
