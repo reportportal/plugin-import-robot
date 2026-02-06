@@ -1,6 +1,6 @@
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 def commonScriptsUrl = 'https://raw.githubusercontent.com/reportportal/gradle-scripts/'
@@ -8,7 +8,7 @@ def commonScriptsUrl = 'https://raw.githubusercontent.com/reportportal/gradle-sc
 project.ext {
     publishRepo = "https://maven.pkg.github.com/reportportal/plugin-import-robot"
     releaseMode = project.hasProperty("releaseMode")
-    pluginsDir = "$buildDir/plugins"
+    pluginsDir = layout.buildDirectory.dir("plugins").get().asFile.path
     scriptsUrl = commonScriptsUrl + (releaseMode ? getProperty('scripts.version') : 'develop')
     excludeTests = [
             '**/entity/**',
