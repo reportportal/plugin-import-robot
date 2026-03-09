@@ -57,6 +57,12 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-Aspring.modulith.apt.output=${layout.buildDirectory.get().asFile.path}/generated-spring-modulith"
+    ]
+}
+
 test {
     useJUnitPlatform()
     maxParallelForks = 1
