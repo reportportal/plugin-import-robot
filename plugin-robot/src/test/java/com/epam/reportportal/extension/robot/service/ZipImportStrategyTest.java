@@ -7,9 +7,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.reportportal.infrastructure.events.FinishLaunchRqEvent;
-import com.epam.reportportal.infrastructure.persistence.dao.LaunchRepository;
-import com.epam.reportportal.infrastructure.persistence.entity.launch.Launch;
+import com.epam.reportportal.base.infrastructure.events.FinishLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.persistence.entity.launch.Launch;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
