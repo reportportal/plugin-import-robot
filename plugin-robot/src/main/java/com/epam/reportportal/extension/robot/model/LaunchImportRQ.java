@@ -1,7 +1,7 @@
 package com.epam.reportportal.extension.robot.model;
 
-import com.epam.reportportal.reporting.ItemAttributesRQ;
-import com.epam.reportportal.reporting.Mode;
+import com.epam.reportportal.base.reporting.ItemAttributesRQ;
+import com.epam.reportportal.base.reporting.Mode;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;

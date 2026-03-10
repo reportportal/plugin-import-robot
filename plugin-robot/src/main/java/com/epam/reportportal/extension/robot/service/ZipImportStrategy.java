@@ -19,9 +19,9 @@ import static com.epam.reportportal.extension.robot.service.FileExtensionConstan
 import static com.epam.reportportal.extension.robot.service.FileExtensionConstant.ZIP_EXTENSION;
 
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.reportportal.infrastructure.persistence.dao.LaunchRepository;
-import com.epam.reportportal.infrastructure.rules.exception.ErrorType;
-import com.epam.reportportal.infrastructure.rules.exception.ReportPortalException;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
+import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

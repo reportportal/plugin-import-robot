@@ -30,6 +30,7 @@ apply from: scriptsUrl + '/signing.gradle'
 repositories {
     mavenLocal()
     mavenCentral { url = "https://repo1.maven.org/maven2" }
+    maven { url = "https://build.shibboleth.net/nexus/content/repositories/releases/" }
     if (!releaseMode) {
         maven { url = 'https://jitpack.io' }
     }
@@ -40,10 +41,14 @@ ext['spring-boot.version'] = "${springBootVersion}"
 dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:service-api'
-        annotationProcessor 'com.epam.reportportal:service-api'
+        annotationProcessor('com.epam.reportportal:service-api') {
+            exclude group: 'org.springframework.modulith', module: 'spring-modulith-apt'
+        }
     } else {
-        implementation 'com.github.reportportal:service-api:7044a29'
-        annotationProcessor 'com.github.reportportal:service-api:7044a29'
+        implementation 'com.github.reportportal:service-api:e81b4f6'
+        annotationProcessor('com.github.reportportal:service-api:e81b4f6') {
+            exclude group: 'org.springframework.modulith', module: 'spring-modulith-apt'
+        }
     }
     implementation "org.springframework:spring-test"
     // add lombok support
