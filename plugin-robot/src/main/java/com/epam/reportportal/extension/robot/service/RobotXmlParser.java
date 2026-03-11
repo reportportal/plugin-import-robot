@@ -74,6 +74,7 @@ import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
@@ -189,7 +190,7 @@ public class RobotXmlParser {
   private ItemInfo handleSuiteElement(Element element) {
     ItemInfo itemInfo = new ItemInfo();
     String sourceAttribute = element.getAttribute(ATTR_SOURCE.val());
-    itemInfo.setSource(sourceAttribute.substring(sourceAttribute.lastIndexOf("/")));
+    itemInfo.setSource(extractSourceWithSeparator(sourceAttribute));
     itemInfo.setName(Optional.of(element.getAttribute(ATTR_NAME.val())).orElse("no_name"));
     itemInfo.setType(TestItemTypeEnum.SUITE);
     updateWithStatusInfo(element, itemInfo);
@@ -197,6 +198,14 @@ public class RobotXmlParser {
     String uuid = items.peek() == null ? startRootItem(itemInfo) : startTestItem(itemInfo);
     itemInfo.setUuid(uuid);
     return itemInfo;
+  }
+
+  private String extractSourceWithSeparator(String path) {
+    if (path == null || path.isBlank()) {
+      return "/";
+    }
+
+    return "/" + FilenameUtils.getName(path);
   }
 
   private ItemInfo handleKeywordElement(Element element) {
