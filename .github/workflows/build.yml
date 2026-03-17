@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-libs
-          path: build/libs/*.jar
+          path: plugin-robot/build/libs/*.jar
           retention-days: 1
 
   upload:
