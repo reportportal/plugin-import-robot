@@ -2,6 +2,7 @@ package com.epam.reportportal.extension.robot.service;
 
 import static com.epam.reportportal.extension.robot.service.AbstractImportStrategy.cleanMessage;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ARG;
+import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_KEY;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_ELAPSED;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_END_TIME;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.ATTR_GENERATED;
@@ -356,7 +357,16 @@ public class RobotXmlParser {
   private void updateWithTags(Element element, ItemInfo itemInfo) {
     List<Node> tags = findChildNodes(element, TAG.val());
     Set<ItemAttributesRQ> attributes = tags.stream()
-        .map(it -> new ItemAttributesRQ(it.getTextContent())).collect(Collectors.toSet());
+        .map(node -> {
+          Element tagElement = (Element) node;
+          String key = tagElement.getAttribute(ATTR_KEY.val()).trim();
+          String value = tagElement.getTextContent().trim();
+          if (StringUtils.hasText(key)) {
+            return new ItemAttributesRQ(key, value);
+          }
+          return new ItemAttributesRQ(value);
+        })
+        .collect(Collectors.toSet());
     itemInfo.setItemAttributes(attributes);
   }
 
