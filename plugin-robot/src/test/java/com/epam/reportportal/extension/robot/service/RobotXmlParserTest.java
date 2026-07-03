@@ -104,4 +104,22 @@ class RobotXmlParserTest {
         .collect(Collectors.toSet());
     assertEquals(Set.of("scenario_owner:team-trust", "component:authentication"), values);
   }
+
+  @Test
+  void blankValueTagsAreSkipped() throws IOException {
+    List<StartTestItemRQ> started = captureStartItemEvents();
+
+    RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false);
+    parser.parse(xml("report_with_blank_value_tags.xml"));
+
+    StartTestItemRQ testItem = started.stream()
+        .filter(rq -> "Login Test".equals(rq.getName()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Test item not found"));
+
+    Set<ItemAttributesRQ> attributes = testItem.getAttributes();
+    // blank-valued tags should be dropped; only the valid tag remains
+    assertEquals(1, attributes.size());
+    assertEquals("team-test", attributes.iterator().next().getValue());
+  }
 }

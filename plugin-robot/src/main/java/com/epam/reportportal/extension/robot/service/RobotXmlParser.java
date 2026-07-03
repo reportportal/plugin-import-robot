@@ -361,11 +361,15 @@ public class RobotXmlParser {
           Element tagElement = (Element) node;
           String key = tagElement.getAttribute(ATTR_KEY.val()).trim();
           String value = tagElement.getTextContent().trim();
+          if (!StringUtils.hasText(value)) {
+            return null;
+          }
           if (StringUtils.hasText(key)) {
             return new ItemAttributesRQ(key, value);
           }
           return new ItemAttributesRQ(value);
         })
+        .filter(Objects::nonNull)
         .collect(Collectors.toSet());
     itemInfo.setItemAttributes(attributes);
   }
