@@ -9,6 +9,9 @@ import static com.epam.reportportal.base.infrastructure.rules.exception.ErrorTyp
 import static org.apache.commons.io.FileUtils.ONE_MB;
 
 import com.epam.reportportal.api.model.PluginCommandRQ;
+import com.epam.reportportal.base.infrastructure.persistence.entity.organization.OrganizationRole;
+import com.epam.reportportal.base.infrastructure.persistence.entity.project.ProjectRole;
+import com.epam.reportportal.base.infrastructure.persistence.entity.user.UserRole;
 import com.epam.reportportal.extension.command.AbstractExtensionCommand;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
 import com.epam.reportportal.extension.robot.service.ImportStrategy;
@@ -47,6 +50,10 @@ public class RobotImportCommand extends AbstractExtensionCommand<StartLaunchRS> 
         projectUserRepository);
     this.requestEntityConverter = requestEntityConverter;
     this.importStrategyFactory = new ImportStrategyFactory(eventPublisher, launchRepository);
+
+    this.minProjectRole = ProjectRole.EDITOR;
+    this.minOrgRole = OrganizationRole.MANAGER;
+    this.minUserRole = UserRole.ADMINISTRATOR;
   }
 
   @Override

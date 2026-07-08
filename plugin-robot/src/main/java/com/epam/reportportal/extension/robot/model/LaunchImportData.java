@@ -17,22 +17,19 @@
 package com.epam.reportportal.extension.robot.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Operation completion response extension for launch import.
  *
  * @author Siarhei Hrabko
  */
+@Setter
+@Getter
 public class LaunchImportData {
 
   @JsonProperty("uuid")
   private String uuid;
 
-  public String getUuid() {
-    return uuid;
-  }
-
-  public void setUuid(String uuid) {
-    this.uuid = uuid;
-  }
 }
