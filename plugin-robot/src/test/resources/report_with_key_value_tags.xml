@@ -1,0 +1,10 @@
+<robot generator="Swift XML generator" generated="20240101 10:00:00.000">
+  <suite id="s1" name="Acceptance Tests" source="/AcceptanceTests.swift">
+    <test id="s1-t1" name="Login Test" line="10">
+      <tag key="scenario_owner">team-trust</tag>
+      <tag key="component">authentication</tag>
+      <status status="PASS" start="2024-01-01T10:00:00" elapsed="1.5"/>
+    </test>
+    <status status="PASS" start="2024-01-01T10:00:00" elapsed="1.5"/>
+  </suite>
+</robot>
