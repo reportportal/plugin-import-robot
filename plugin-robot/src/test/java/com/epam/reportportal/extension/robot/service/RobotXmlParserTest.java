@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-import com.epam.reportportal.base.infrastructure.events.StartChildItemRqEvent;
-import com.epam.reportportal.base.reporting.ItemAttributesRQ;
-import com.epam.reportportal.base.reporting.StartTestItemRQ;
+import com.epam.reportportal.events.StartChildItemRqEvent;
+import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
+import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ class RobotXmlParserTest {
     doAnswer(invocation -> {
       Object event = invocation.getArgument(0);
       if (event instanceof StartChildItemRqEvent e) {
-        captured.add(e.getStartTestItemRq());
+        captured.add(e.getStartTestItemRQ());
       }
       return null;
     }).when(eventPublisher).publishEvent(any());
@@ -60,7 +60,7 @@ class RobotXmlParserTest {
   }
 
   @Test
-  void keyValueTagsAreParsedAsKeyValueAttributes() throws IOException {
+  void keyValueTagsAreParsedAsKeyValueAttributes() {
     List<StartTestItemRQ> started = captureStartItemEvents();
 
     RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false);
@@ -82,7 +82,7 @@ class RobotXmlParserTest {
   }
 
   @Test
-  void plainTagsAreBackwardCompatible() throws IOException {
+  void plainTagsAreBackwardCompatible() {
     List<StartTestItemRQ> started = captureStartItemEvents();
 
     RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false);
@@ -106,7 +106,7 @@ class RobotXmlParserTest {
   }
 
   @Test
-  void blankValueTagsAreSkipped() throws IOException {
+  void blankValueTagsAreSkipped() {
     List<StartTestItemRQ> started = captureStartItemEvents();
 
     RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false);
