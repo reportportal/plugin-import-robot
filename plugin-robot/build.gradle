@@ -28,30 +28,22 @@ apply from: scriptsUrl + '/signing.gradle'
 repositories {
     mavenLocal()
     mavenCentral { url "https://repo1.maven.org/maven2" }
-    if (!releaseMode) {
-        maven { url 'https://jitpack.io' }
-    }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.14.4')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.15.1')
     }
 }
 
 ext['spring-boot.version'] = "${springBootVersion}"
 
 dependencies {
-    if (releaseMode) {
-        implementation 'com.epam.reportportal:commons-dao'
-        implementation 'com.epam.reportportal:commons'
-        implementation 'com.epam.reportportal:plugin-api'
-        annotationProcessor 'com.epam.reportportal:plugin-api'
-    } else {
-        implementation 'com.github.reportportal:commons-dao:5.15.5'
-        implementation 'com.github.reportportal:plugin-api:5.15.0'
-        annotationProcessor 'com.github.reportportal:plugin-api:5.15.0'
-    }
+    implementation 'com.github.reportportal:commons-dao:5.15.1'
+    implementation 'com.github.reportportal:plugin-api:5.15.0'
+    annotationProcessor 'com.github.reportportal:plugin-api:5.15.0'
+
     implementation "org.springframework:spring-test"
     // add lombok support
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
