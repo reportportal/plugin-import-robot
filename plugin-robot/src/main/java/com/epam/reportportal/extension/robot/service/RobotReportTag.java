@@ -30,6 +30,7 @@ public enum RobotReportTag {
   DOC("doc"),
   ARG("arg"),
   TAG("tag"),
+  ATTR_KEY("key"),
   ATTR_LIBRARY("library"),
   ATTR_NAME("name"),
   ATTR_LINE("line"),
