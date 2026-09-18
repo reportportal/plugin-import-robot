@@ -55,22 +55,29 @@ public class ZipImportStrategy extends AbstractImportStrategy {
 
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    //copy of the launch's id to use it in catch block if something goes wrong
-    String launchUuid = UUID.randomUUID().toString();
+    var existingLaunchUuid = getExistingLaunchUuid(rq);
+    boolean importIntoExistingLaunch = existingLaunchUuid.isPresent();
+    String launchUuid = existingLaunchUuid.orElseGet(() -> UUID.randomUUID().toString());
     File zip = transferToTempFile(file);
 
     try (ZipFile zipFile = new ZipFile(zip)) {
-      launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      if (!importIntoExistingLaunch) {
+        launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, zipFile, isSkippedNotIssue(rq.getAttributes()));
+          projectName, zipFile, isSkippedNotIssue(rq));
       zipFile.stream().filter(isFile.and(isXml).and(isNotSystemDirectory))
           .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
-      finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
-      updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      if (!importIntoExistingLaunch) {
+        finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
+        updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      }
       return launchUuid;
     } catch (Exception e) {
       e.printStackTrace();
-      updateBrokenLaunch(launchUuid);
+      if (!importIntoExistingLaunch) {
+        updateBrokenLaunch(launchUuid);
+      }
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     } finally {
       try {

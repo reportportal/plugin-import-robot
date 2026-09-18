@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -98,6 +99,14 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
             attribute -> SKIPPED_IS_NOT_ISSUE.equals(attribute.getKey()) && attribute.isSystem())
         .findAny().filter(itemAttributesRQ -> Boolean.parseBoolean(itemAttributesRQ.getValue()))
         .isPresent();
+  }
+
+  protected Boolean isSkippedNotIssue(LaunchImportRQ rq) {
+    return isSkippedNotIssue(ofNullable(rq).map(LaunchImportRQ::getAttributes).orElse(null));
+  }
+
+  protected Optional<String> getExistingLaunchUuid(LaunchImportRQ rq) {
+    return ofNullable(rq).map(LaunchImportRQ::getLaunchUuid).filter(StringUtils::hasText);
   }
 
   /*

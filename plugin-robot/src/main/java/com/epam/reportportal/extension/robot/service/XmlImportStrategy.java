@@ -39,20 +39,28 @@ public class XmlImportStrategy extends AbstractImportStrategy {
 
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    String launchUuid = UUID.randomUUID().toString();
+    var existingLaunchUuid = getExistingLaunchUuid(rq);
+    boolean importIntoExistingLaunch = existingLaunchUuid.isPresent();
+    String launchUuid = existingLaunchUuid.orElseGet(() -> UUID.randomUUID().toString());
     try (InputStream xmlStream = file.getInputStream()) {
-      launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
+      if (!importIntoExistingLaunch) {
+        launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
+      }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, isSkippedNotIssue(rq.getAttributes()));
+          projectName, isSkippedNotIssue(rq));
       if (!file.isEmpty()) {
         robotXmlParser.parse(xmlStream);
       }
-      finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
-      updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      if (!importIntoExistingLaunch) {
+        finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
+        updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      }
       return launchUuid;
     } catch (Exception e) {
       e.printStackTrace();
-      updateBrokenLaunch(launchUuid);
+      if (!importIntoExistingLaunch) {
+        updateBrokenLaunch(launchUuid);
+      }
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     }
   }
