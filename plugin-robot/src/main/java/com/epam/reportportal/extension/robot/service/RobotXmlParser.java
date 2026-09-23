@@ -102,29 +102,33 @@ public class RobotXmlParser {
   private final String projectName;
   private final Deque<ItemInfo> items = new ArrayDeque<>();
   private final boolean isSkippedNotIssue;
+  @Nullable
+  private final Instant launchStartTime;
   private ZipFile zipFile;
   private Instant lowestTime;
   private Instant highestTime;
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
       String projectName, boolean isSkippedNotIssue) {
-    this.eventPublisher = eventPublisher;
-    this.launchUuid = launchUuid;
-    this.projectName = projectName;
-    this.lowestTime = Instant.now();
-    this.highestTime = Instant.EPOCH;
-    this.isSkippedNotIssue = isSkippedNotIssue;
+    this(eventPublisher, launchUuid, projectName, isSkippedNotIssue, null);
   }
 
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
-      String projectName, ZipFile rootZipFile, boolean isSkippedNotIssue) {
+      String projectName, boolean isSkippedNotIssue, @Nullable Instant launchStartTime) {
     this.eventPublisher = eventPublisher;
     this.launchUuid = launchUuid;
     this.projectName = projectName;
     this.lowestTime = Instant.now();
     this.highestTime = Instant.EPOCH;
-    this.zipFile = rootZipFile;
     this.isSkippedNotIssue = isSkippedNotIssue;
+    this.launchStartTime = launchStartTime;
+  }
+
+  public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
+      String projectName, ZipFile rootZipFile, boolean isSkippedNotIssue,
+      @Nullable Instant launchStartTime) {
+    this(eventPublisher, launchUuid, projectName, isSkippedNotIssue, launchStartTime);
+    this.zipFile = rootZipFile;
   }
 
   public void parse(InputStream inputStream) {
@@ -144,8 +148,7 @@ public class RobotXmlParser {
       traverseNodes(root);
 
     } catch (IOException | SAXException e) {
-      e.printStackTrace();
-      log.error(cleanMessage(e));
+      log.error("Failed to parse Robot XML report: {}", cleanMessage(e), e);
       throw new ReportPortalException(ErrorType.UNCLASSIFIED_REPORT_PORTAL_ERROR, e);
     }
   }
@@ -283,7 +286,9 @@ public class RobotXmlParser {
     StartTestItemRQ rq = new StartTestItemRQ();
     rq.setUuid(UUID.randomUUID().toString());
     rq.setLaunchUuid(launchUuid);
-    rq.setStartTime(itemInfo.getStartTime());
+    Instant startTime = itemInfo.getStartTime();
+    validateItemTime(startTime, "start time");
+    rq.setStartTime(startTime);
     rq.setHasStats(itemInfo.isHasStats());
     rq.setType(itemInfo.getType().name());
     rq.setDescription(itemInfo.getDescription());
@@ -300,12 +305,21 @@ public class RobotXmlParser {
       final FinishTestItemRQ rq = new FinishTestItemRQ();
       markAsNotIssue(rq, itemInfo.getStatus());
       rq.setStatus(itemInfo.getStatus().name());
-      rq.setEndTime(itemInfo.getEndTime());
+      Instant endTime = itemInfo.getEndTime();
+      rq.setEndTime(endTime);
       rq.setLaunchUuid(launchUuid);
       eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
-      if (itemInfo.getEndTime().isAfter(highestTime)) {
-        highestTime = itemInfo.getEndTime();
+      if (endTime.isAfter(highestTime)) {
+        highestTime = endTime;
       }
+    }
+  }
+
+  private void validateItemTime(@Nullable Instant itemTime, String fieldName) {
+    if (launchStartTime != null && itemTime != null && itemTime.isBefore(launchStartTime)) {
+      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
+          String.format("Item %s '%s' is earlier than launch start time '%s'", fieldName, itemTime,
+              launchStartTime));
     }
   }
 

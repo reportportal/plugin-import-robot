@@ -72,6 +72,8 @@ class ZipImportStrategyTest {
 
   @Test
   void importLaunchIntoExistingLaunchDoesNotUpdateLaunch() throws IOException {
+    when(launchRepository.findByUuid(EXISTING_LAUNCH_UUID)).thenReturn(
+        Optional.of(existingLaunch()));
     ZipImportStrategy importStrategy = new ZipImportStrategy(eventPublisher, launchRepository);
 
     String launchUuid = importStrategy.importLaunch(zipFile(), PROJECT_NAME, existingLaunchRq());
@@ -79,7 +81,7 @@ class ZipImportStrategyTest {
     assertEquals(EXISTING_LAUNCH_UUID, launchUuid);
     assertFalse(publishedEvents().stream().anyMatch(StartLaunchRqEvent.class::isInstance));
     assertFalse(publishedEvents().stream().anyMatch(FinishLaunchRqEvent.class::isInstance));
-    verify(launchRepository, never()).findByUuid(any());
+    verify(launchRepository, times(1)).findByUuid(EXISTING_LAUNCH_UUID);
     verify(launchRepository, never()).save(any());
   }
 
@@ -97,6 +99,12 @@ class ZipImportStrategyTest {
     LaunchImportRQ rq = new LaunchImportRQ();
     ReflectionTestUtils.setField(rq, "launchUuid", EXISTING_LAUNCH_UUID);
     return rq;
+  }
+
+  private Launch existingLaunch() {
+    Launch launch = new Launch(1L);
+    launch.setStartTime(Instant.EPOCH);
+    return launch;
   }
 
   private List<Object> publishedEvents() {

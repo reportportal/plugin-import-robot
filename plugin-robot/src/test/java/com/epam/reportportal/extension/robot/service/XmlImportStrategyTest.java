@@ -85,6 +85,8 @@ class XmlImportStrategyTest {
 
   @Test
   void importLaunchIntoExistingLaunchDoesNotUpdateLaunch() {
+    when(launchRepository.findByUuid(EXISTING_LAUNCH_UUID)).thenReturn(
+        Optional.of(existingLaunch()));
     XmlImportStrategy importStrategy = new XmlImportStrategy(eventPublisher, launchRepository);
 
     String launchUuid = importStrategy.importLaunch(xmlFile(), PROJECT_NAME, existingLaunchRq());
@@ -92,7 +94,7 @@ class XmlImportStrategyTest {
     assertEquals(EXISTING_LAUNCH_UUID, launchUuid);
     assertFalse(publishedEvents().stream().anyMatch(StartLaunchRqEvent.class::isInstance));
     assertFalse(publishedEvents().stream().anyMatch(FinishLaunchRqEvent.class::isInstance));
-    verify(launchRepository, never()).findByUuid(any());
+    verify(launchRepository, times(1)).findByUuid(EXISTING_LAUNCH_UUID);
     verify(launchRepository, never()).save(any());
   }
 
@@ -104,6 +106,12 @@ class XmlImportStrategyTest {
     LaunchImportRQ rq = new LaunchImportRQ();
     ReflectionTestUtils.setField(rq, "launchUuid", EXISTING_LAUNCH_UUID);
     return rq;
+  }
+
+  private Launch existingLaunch() {
+    Launch launch = new Launch(1L);
+    launch.setStartTime(Instant.EPOCH);
+    return launch;
   }
 
   private List<Object> publishedEvents() {

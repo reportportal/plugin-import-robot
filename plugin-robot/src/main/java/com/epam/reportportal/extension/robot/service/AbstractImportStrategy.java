@@ -109,6 +109,12 @@ public abstract class AbstractImportStrategy implements ImportStrategy {
     return ofNullable(rq).map(LaunchImportRQ::getLaunchUuid).filter(StringUtils::hasText);
   }
 
+  protected Instant getExistingLaunchStartTime(String launchUuid) {
+    return launchRepository.findByUuid(launchUuid)
+        .orElseThrow(() -> new ReportPortalException(ErrorType.LAUNCH_NOT_FOUND, launchUuid))
+        .getStartTime();
+  }
+
   /*
    * if the importing results do not contain initial timestamp a launch gets
    * a default date if the launch is broken, time should be updated to not to broke

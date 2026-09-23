@@ -23,7 +23,10 @@ import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +34,8 @@ import org.springframework.web.multipart.MultipartFile;
  * @author <a href="mailto:ivan_budayeu@epam.com">Ivan Budayeu</a>
  */
 public class XmlImportStrategy extends AbstractImportStrategy {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(XmlImportStrategy.class);
 
   public XmlImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
@@ -42,12 +47,14 @@ public class XmlImportStrategy extends AbstractImportStrategy {
     var existingLaunchUuid = getExistingLaunchUuid(rq);
     boolean importIntoExistingLaunch = existingLaunchUuid.isPresent();
     String launchUuid = existingLaunchUuid.orElseGet(() -> UUID.randomUUID().toString());
+    Instant existingLaunchStartTime = importIntoExistingLaunch
+        ? getExistingLaunchStartTime(launchUuid) : null;
     try (InputStream xmlStream = file.getInputStream()) {
       if (!importIntoExistingLaunch) {
         launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
       }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, isSkippedNotIssue(rq));
+          projectName, isSkippedNotIssue(rq), existingLaunchStartTime);
       if (!file.isEmpty()) {
         robotXmlParser.parse(xmlStream);
       }
@@ -57,7 +64,8 @@ public class XmlImportStrategy extends AbstractImportStrategy {
       }
       return launchUuid;
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("Failed to import Robot XML file '{}' into launch '{}' for project '{}'",
+          file.getOriginalFilename(), launchUuid, projectName, e);
       if (!importIntoExistingLaunch) {
         updateBrokenLaunch(launchUuid);
       }
