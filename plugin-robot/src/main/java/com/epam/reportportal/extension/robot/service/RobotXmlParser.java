@@ -287,7 +287,7 @@ public class RobotXmlParser {
     rq.setUuid(UUID.randomUUID().toString());
     rq.setLaunchUuid(launchUuid);
     Instant startTime = itemInfo.getStartTime();
-    validateItemTime(startTime, "start time");
+    validateItemTime(startTime);
     rq.setStartTime(startTime);
     rq.setHasStats(itemInfo.isHasStats());
     rq.setType(itemInfo.getType().name());
@@ -315,10 +315,10 @@ public class RobotXmlParser {
     }
   }
 
-  private void validateItemTime(@Nullable Instant itemTime, String fieldName) {
+  private void validateItemTime(@Nullable Instant itemTime) {
     if (launchStartTime != null && itemTime != null && itemTime.isBefore(launchStartTime)) {
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
-          String.format("Item %s '%s' is earlier than launch start time '%s'", fieldName, itemTime,
+          String.format("Item %s '%s' is earlier than launch start time '%s'", "start time", itemTime,
               launchStartTime));
     }
   }
