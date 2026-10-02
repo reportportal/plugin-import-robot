@@ -23,7 +23,10 @@ import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +35,8 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public class XmlImportStrategy extends AbstractImportStrategy {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(XmlImportStrategy.class);
+
   public XmlImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
     super(eventPublisher, launchRepository);
@@ -39,20 +44,31 @@ public class XmlImportStrategy extends AbstractImportStrategy {
 
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    String launchUuid = UUID.randomUUID().toString();
+    var existingLaunchUuid = getExistingLaunchUuid(rq);
+    boolean importIntoExistingLaunch = existingLaunchUuid.isPresent();
+    String launchUuid = existingLaunchUuid.orElseGet(() -> UUID.randomUUID().toString());
+    Instant existingLaunchStartTime = importIntoExistingLaunch
+        ? getExistingLaunchStartTime(launchUuid) : null;
     try (InputStream xmlStream = file.getInputStream()) {
-      launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
+      if (!importIntoExistingLaunch) {
+        launchUuid = startLaunch(launchUuid, getLaunchName(file, XML_EXTENSION), projectName, rq);
+      }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, isSkippedNotIssue(rq.getAttributes()));
+          projectName, isSkippedNotIssue(rq), existingLaunchStartTime);
       if (!file.isEmpty()) {
         robotXmlParser.parse(xmlStream);
       }
-      finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
-      updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      if (!importIntoExistingLaunch) {
+        finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
+        updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      }
       return launchUuid;
     } catch (Exception e) {
-      e.printStackTrace();
-      updateBrokenLaunch(launchUuid);
+      LOGGER.error("Failed to import Robot XML file '{}' into launch '{}' for project '{}'",
+          file.getOriginalFilename(), launchUuid, projectName, e);
+      if (!importIntoExistingLaunch) {
+        updateBrokenLaunch(launchUuid);
+      }
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     }
   }

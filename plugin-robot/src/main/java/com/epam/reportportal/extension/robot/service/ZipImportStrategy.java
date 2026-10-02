@@ -26,11 +26,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +41,8 @@ import org.springframework.web.multipart.MultipartFile;
  * @author <a href="mailto:ivan_budayeu@epam.com">Ivan Budayeu</a>
  */
 public class ZipImportStrategy extends AbstractImportStrategy {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ZipImportStrategy.class);
 
   private static final Predicate<ZipEntry> isFile = zipEntry -> !zipEntry.isDirectory();
   private static final Predicate<ZipEntry> isXml = zipEntry -> zipEntry.getName()
@@ -55,28 +60,38 @@ public class ZipImportStrategy extends AbstractImportStrategy {
 
   @Override
   public String importLaunch(MultipartFile file, String projectName, LaunchImportRQ rq) {
-    //copy of the launch's id to use it in catch block if something goes wrong
-    String launchUuid = UUID.randomUUID().toString();
+    var existingLaunchUuid = getExistingLaunchUuid(rq);
+    boolean importIntoExistingLaunch = existingLaunchUuid.isPresent();
+    String launchUuid = existingLaunchUuid.orElseGet(() -> UUID.randomUUID().toString());
+    Instant existingLaunchStartTime = importIntoExistingLaunch
+        ? getExistingLaunchStartTime(launchUuid) : null;
     File zip = transferToTempFile(file);
 
     try (ZipFile zipFile = new ZipFile(zip)) {
-      launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      if (!importIntoExistingLaunch) {
+        launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+      }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, zipFile, isSkippedNotIssue(rq.getAttributes()));
+          projectName, zipFile, isSkippedNotIssue(rq), existingLaunchStartTime);
       zipFile.stream().filter(isFile.and(isXml).and(isNotSystemDirectory))
           .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
-      finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
-      updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      if (!importIntoExistingLaunch) {
+        finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
+        updateStartTime(launchUuid, robotXmlParser.getLowestTime());
+      }
       return launchUuid;
     } catch (Exception e) {
-      e.printStackTrace();
-      updateBrokenLaunch(launchUuid);
+      LOGGER.error("Failed to import Robot ZIP file '{}' into launch '{}' for project '{}'",
+          file.getOriginalFilename(), launchUuid, projectName, e);
+      if (!importIntoExistingLaunch) {
+        updateBrokenLaunch(launchUuid);
+      }
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
     } finally {
       try {
         Files.deleteIfExists(zip.getAbsoluteFile().toPath());
       } catch (IOException e) {
-        e.printStackTrace();
+        LOGGER.warn("Failed to delete temporary ZIP file '{}'", zip.getAbsolutePath(), e);
       }
     }
   }
