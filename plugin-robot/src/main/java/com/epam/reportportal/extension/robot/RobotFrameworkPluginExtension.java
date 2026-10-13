@@ -20,8 +20,6 @@ import com.epam.ta.reportportal.dao.IntegrationRepository;
 import com.epam.ta.reportportal.dao.IntegrationTypeRepository;
 import com.epam.ta.reportportal.dao.LaunchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +53,8 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
       this::getCommands);
   private final String resourcesDir;
   private final Supplier<ApplicationListener<PluginEvent>> pluginLoadedListener;
-  private final RequestEntityConverter requestEntityConverter;
+  private final Supplier<RequestEntityConverter> requestEntityConverterSupplier = new MemoizingSupplier<>(
+      this::createRequestEntityConverter);
   @Autowired
   private IntegrationTypeRepository integrationTypeRepository;
   @Autowired
@@ -68,6 +67,8 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
       this::getCommonCommands);
   @Autowired
   private ApplicationContext applicationContext;
+  @Autowired
+  private ObjectMapper objectMapper;
 
   public RobotFrameworkPluginExtension(Map<String, Object> initParams) {
     resourcesDir = IntegrationTypeProperties.RESOURCES_DIRECTORY.getValue(initParams)
@@ -77,11 +78,10 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
         new PluginEventHandlerFactory(resourcesDir, integrationTypeRepository,
             integrationRepository)
     ));
+  }
 
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new JavaTimeModule());
-    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    requestEntityConverter = new RequestEntityConverter(objectMapper);
+  private RequestEntityConverter createRequestEntityConverter() {
+    return new RequestEntityConverter(objectMapper);
   }
 
   @PostConstruct
@@ -146,7 +146,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
 
   private Map<String, CommonPluginCommand<?>> getCommonCommands() {
     HashMap<String, CommonPluginCommand<?>> pluginCommands = new HashMap<>();
-    var robotImportCommand = new RobotImportCommand(requestEntityConverter,
+    var robotImportCommand = new RobotImportCommand(requestEntityConverterSupplier.get(),
         eventPublisher, launchRepository);
     pluginCommands.put(robotImportCommand.getName(), robotImportCommand);
     return pluginCommands;

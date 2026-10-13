@@ -11,6 +11,10 @@ import lombok.Getter;
 @Getter
 public class LaunchImportRQ {
 
+  @JsonProperty
+  @JsonAlias({"launchUuid", "launch_uuid"})
+  private String launchUuid;
+
   @JsonProperty(value = "name")
   protected String name;
 

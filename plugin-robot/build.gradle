@@ -40,9 +40,9 @@ dependencyManagement {
 ext['spring-boot.version'] = "${springBootVersion}"
 
 dependencies {
-    implementation 'com.github.reportportal:commons-dao:5.15.6'
-    implementation 'com.github.reportportal:plugin-api:5.15.0'
-    annotationProcessor 'com.github.reportportal:plugin-api:5.15.0'
+    implementation 'com.github.reportportal:commons-dao:5.15.7'
+    implementation 'com.github.reportportal:plugin-api:5.15.1'
+    annotationProcessor 'com.github.reportportal:plugin-api:5.15.1'
 
     implementation "org.springframework:spring-test"
     // add lombok support

@@ -18,14 +18,18 @@ package com.epam.reportportal.extension.robot.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 import com.epam.reportportal.events.StartChildItemRqEvent;
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
 import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,5 +125,30 @@ class RobotXmlParserTest {
     // blank-valued tags should be dropped; only the valid tag remains
     assertEquals(1, attributes.size());
     assertEquals("team-test", attributes.iterator().next().getValue());
+  }
+
+  @Test
+  void errorIsThrownWhenItemStartTimeIsBeforeLaunchStartTime() {
+    RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false,
+        Instant.now());
+
+    assertThrows(ReportPortalException.class, () -> parser.parse(xml("report_with_plain_tags.xml")));
+  }
+
+  @Test
+  void errorIsThrownWhenNestedItemStartTimeIsBeforeLaunchStartTime() {
+    String report = "<robot generator=\"Swift XML generator\" generated=\"20240101 10:00:00.000\">"
+        + "<suite id=\"s1\" name=\"Acceptance Tests\" source=\"/AcceptanceTests.swift\">"
+        + "<test id=\"s1-t1\" name=\"Login Test\" line=\"10\">"
+        + "<status status=\"PASS\" start=\"2024-01-01T09:59:00\" elapsed=\"1.0\"/>"
+        + "</test>"
+        + "<status status=\"PASS\" start=\"2024-01-01T10:00:00\" elapsed=\"1.0\"/>"
+        + "</suite>"
+        + "</robot>";
+    RobotXmlParser parser = new RobotXmlParser(eventPublisher, "launch-uuid", "project", false,
+        Instant.parse("2024-01-01T10:00:00Z"));
+
+    assertThrows(ReportPortalException.class,
+        () -> parser.parse(new ByteArrayInputStream(report.getBytes(StandardCharsets.UTF_8))));
   }
 }

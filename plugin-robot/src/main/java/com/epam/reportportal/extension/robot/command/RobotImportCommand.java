@@ -31,13 +31,11 @@ public class RobotImportCommand implements CommonPluginCommand<StartLaunchRS> {
 
   private final RequestEntityConverter requestEntityConverter;
   private final ImportStrategyFactory importStrategyFactory;
-  private final LaunchRepository launchRepository;
 
   public RobotImportCommand(RequestEntityConverter requestEntityConverter,
       ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
     this.requestEntityConverter = requestEntityConverter;
-    this.launchRepository = launchRepository;
     this.importStrategyFactory = new ImportStrategyFactory(eventPublisher, launchRepository);
   }
 

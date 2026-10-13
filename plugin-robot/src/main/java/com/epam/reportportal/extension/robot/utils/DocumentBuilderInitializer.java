@@ -5,8 +5,12 @@ import com.epam.reportportal.rules.exception.ReportPortalException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DocumentBuilderInitializer {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DocumentBuilderInitializer.class);
 
   public static DocumentBuilder get() {
     try {
@@ -21,7 +25,7 @@ public class DocumentBuilderInitializer {
       dbf.setXIncludeAware(false);
       return dbf.newDocumentBuilder();
     } catch (ParserConfigurationException e) {
-      e.printStackTrace();
+      LOGGER.error("Failed to initialize secure XML document builder", e);
       throw new ReportPortalException(ErrorType.PARSING_XML_ERROR, e);
     }
   }
