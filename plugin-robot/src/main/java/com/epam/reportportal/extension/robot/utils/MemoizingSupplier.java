@@ -1,7 +1,6 @@
 package com.epam.reportportal.extension.robot.utils;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -17,7 +16,7 @@ public class MemoizingSupplier<T> implements Supplier<T> {
   private T value;
 
   public MemoizingSupplier(Supplier<T> delegate) {
-    this.delegate = checkNotNull(delegate);
+    this.delegate = Objects.requireNonNull(delegate);
   }
 
   @Override
