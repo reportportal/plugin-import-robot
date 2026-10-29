@@ -23,7 +23,6 @@ import com.epam.reportportal.extension.robot.command.RobotImportCommand;
 import com.epam.reportportal.extension.robot.event.plugin.PluginLoadedEventHandler;
 import com.epam.reportportal.extension.robot.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.support.AbstractApplicationContext;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * @author Andrei Piankouski
@@ -81,7 +81,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   @Autowired
   private ProjectUserRepository projectUserRepository;
   @Autowired
-  private ObjectMapper objectMapper;
+  private JsonMapper jsonMapper;
 
   public RobotFrameworkPluginExtension(Map<String, Object> initParams) {
     resourcesDir = IntegrationTypeProperties.RESOURCES_DIRECTORY.getValue(initParams)
@@ -94,7 +94,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   }
 
   private RequestEntityConverter createRequestEntityConverter() {
-    return new RequestEntityConverter(objectMapper);
+    return new RequestEntityConverter(jsonMapper);
   }
 
   @PostConstruct
@@ -138,11 +138,14 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
     return params;
   }
 
+  // TODO: remove once service-api drops the deprecated abstract methods in ReportPortalExtensionPoint
+  @Deprecated
   @Override
   public CommonPluginCommand getCommonCommand(String commandName) {
     return null;
   }
 
+  @Deprecated
   @Override
   public PluginCommand getIntegrationCommand(String commandName) {
     return null;
