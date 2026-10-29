@@ -132,12 +132,3 @@ tasks.register('assemblePlugin', Copy) {
 }
 
 //compileJava.dependsOn npm_run_build
-
-tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs.addAll([
-            '-Xlint:deprecation',
-            '-Xlint:removal',
-            '-Xmaxwarns', '5000',
-            '-Xmaxerrs', '5000'
-    ])
-}
