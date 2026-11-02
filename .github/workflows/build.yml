@@ -49,7 +49,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-libs
-          path: build/libs/*.jar
+          path: plugin-robot/build/libs/*.jar
+          if-no-files-found: error
           retention-days: 1
 
   upload:
