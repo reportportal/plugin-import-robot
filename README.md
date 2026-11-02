@@ -9,7 +9,7 @@ Build the UI source code: `npm run build`
 ## Build the plugin
 
 Preconditions:
-- Install JDK version 11.
+- Install JDK version 25.
 - Specify version number in gradle.properties file.
 
 **Note:** Versions in the _develop_ branch are not release versions and must be postfixed with `NEXT_RELEASE_VERSION-SNAPSHOT-NUMBER_OF_BUILD (Example: 5.3.6-SNAPSHOT-1)`
