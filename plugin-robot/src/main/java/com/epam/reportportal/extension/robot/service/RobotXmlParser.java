@@ -39,6 +39,8 @@ import com.epam.reportportal.extension.robot.model.ItemInfo;
 import com.epam.reportportal.extension.robot.utils.DateUtils;
 import com.epam.reportportal.extension.robot.utils.DocumentBuilderInitializer;
 import com.epam.reportportal.extension.robot.utils.RobotMapper;
+import com.epam.reportportal.extension.robot.utils.UncompressedSizeLimit;
+import com.epam.reportportal.extension.robot.utils.UncompressedSizeLimit.LimitExceededException;
 import com.epam.reportportal.base.infrastructure.events.FinishItemRqEvent;
 import com.epam.reportportal.base.infrastructure.events.SaveLogRqEvent;
 import com.epam.reportportal.base.infrastructure.events.StartChildItemRqEvent;
@@ -105,6 +107,8 @@ public class RobotXmlParser {
   @Nullable
   private final Instant launchStartTime;
   private ZipFile zipFile;
+  @Nullable
+  private UncompressedSizeLimit sizeLimit;
   private Instant lowestTime;
   private Instant highestTime;
 
@@ -124,11 +128,16 @@ public class RobotXmlParser {
     this.launchStartTime = launchStartTime;
   }
 
+  /**
+   * @param sizeLimit budget shared with the archive's report entries; attachments read from the
+   *                  archive are counted against it
+   */
   public RobotXmlParser(ApplicationEventPublisher eventPublisher, String launchUuid,
-      String projectName, ZipFile rootZipFile, boolean isSkippedNotIssue,
-      @Nullable Instant launchStartTime) {
+      String projectName, ZipFile rootZipFile, @Nullable UncompressedSizeLimit sizeLimit,
+      boolean isSkippedNotIssue, @Nullable Instant launchStartTime) {
     this(eventPublisher, launchUuid, projectName, isSkippedNotIssue, launchStartTime);
     this.zipFile = rootZipFile;
+    this.sizeLimit = sizeLimit;
   }
 
   public void parse(InputStream inputStream) {
@@ -147,6 +156,8 @@ public class RobotXmlParser {
 
       traverseNodes(root);
 
+    } catch (LimitExceededException e) {
+      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, e.getMessage());
     } catch (IOException | SAXException e) {
       log.error("Failed to parse Robot XML report: {}", cleanMessage(e), e);
       throw new ReportPortalException(ErrorType.UNCLASSIFIED_REPORT_PORTAL_ERROR, e);
@@ -467,18 +478,24 @@ public class RobotXmlParser {
           && MediaTypeFactory.getMediaType(entry.getName()).isPresent()
           && SUPPORTED_IMAGE_CONTENT_TYPES.contains(
           MediaTypeFactory.getMediaType(entry.getName()).get().toString())) {
-        try (InputStream inputStream = zipFile.getInputStream(entry)) {
+        try (InputStream inputStream = wrap(zipFile.getInputStream(entry))) {
           File file = new File();
           file.setName(entry.getName());
           file.setContentType(MediaTypeFactory.getMediaType(entry.getName()).get().toString());
           file.setContent(inputStream.readAllBytes());
           return Optional.of(file);
+        } catch (LimitExceededException e) {
+          throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, e.getMessage());
         } catch (IOException e) {
           log.error(e.getMessage());
         }
       }
     }
     return Optional.empty();
+  }
+
+  private InputStream wrap(InputStream inputStream) {
+    return sizeLimit == null ? inputStream : sizeLimit.wrap(inputStream);
   }
 
   private void markAsNotIssue(FinishTestItemRQ rq, StatusEnum status) {

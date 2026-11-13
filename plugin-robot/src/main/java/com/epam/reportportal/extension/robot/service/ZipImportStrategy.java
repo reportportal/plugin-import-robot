@@ -22,19 +22,19 @@ import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepositor
 import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
 import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
+import com.epam.reportportal.extension.robot.utils.UncompressedSizeLimit;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,7 +44,12 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class ZipImportStrategy extends AbstractImportStrategy {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ZipImportStrategy.class);
+  /**
+   * Zip bomb protection: the upload itself is limited to 32 MB, these limits apply to its content (reports and attached
+   * screenshots).
+   */
+  static final int MAX_ENTRIES = 10_000;
+  static final long MAX_UNCOMPRESSED_BYTES = 512L * 1024 * 1024;
 
   private static final Predicate<ZipEntry> isFile = zipEntry -> !zipEntry.isDirectory();
   private static final Predicate<ZipEntry> isXml = zipEntry -> zipEntry.getName()
@@ -54,9 +59,19 @@ public class ZipImportStrategy extends AbstractImportStrategy {
       .contains("_MACOSX") || zipEntry.getName()
       .contains(".DS_Store"));
 
+  private final int maxEntries;
+  private final long maxUncompressedBytes;
+
   public ZipImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
+    this(eventPublisher, launchRepository, MAX_ENTRIES, MAX_UNCOMPRESSED_BYTES);
+  }
+
+  ZipImportStrategy(ApplicationEventPublisher eventPublisher, LaunchRepository launchRepository,
+      int maxEntries, long maxUncompressedBytes) {
     super(eventPublisher, launchRepository);
+    this.maxEntries = maxEntries;
+    this.maxUncompressedBytes = maxUncompressedBytes;
   }
 
 
@@ -68,24 +83,40 @@ public class ZipImportStrategy extends AbstractImportStrategy {
     Instant existingLaunchStartTime = importIntoExistingLaunch
         ? getExistingLaunchStartTime(launchUuid) : null;
     File zip = transferToTempFile(file);
+    boolean launchStarted = false;
 
     try (ZipFile zipFile = new ZipFile(zip)) {
+      // checked before the launch is created, so a rejected archive doesn't leave an empty launch
+      if (zipFile.size() > maxEntries) {
+        throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR,
+            "Archive contains more than " + maxEntries + " entries");
+      }
+      // shared by reports and attachments; counts bytes actually read, so fake sizes in zip headers
+      // can't bypass it
+      UncompressedSizeLimit sizeLimit = new UncompressedSizeLimit(maxUncompressedBytes);
       if (!importIntoExistingLaunch) {
         launchUuid = startLaunch(launchUuid, getLaunchName(file, ZIP_EXTENSION), projectName, rq);
+        launchStarted = true;
       }
       RobotXmlParser robotXmlParser = new RobotXmlParser(eventPublisher, launchUuid,
-          projectName, zipFile, isSkippedNotIssue(rq), existingLaunchStartTime);
-      zipFile.stream().filter(isFile.and(isXml).and(isNotSystemDirectory))
-          .forEach(zipEntry -> robotXmlParser.parse(getEntryStream(zipFile, zipEntry)));
+          projectName, zipFile, sizeLimit, isSkippedNotIssue(rq), existingLaunchStartTime);
+      for (ZipEntry zipEntry : Collections.list(zipFile.entries())) {
+        if (!isFile.and(isXml).and(isNotSystemDirectory).test(zipEntry)) {
+          continue;
+        }
+        try (InputStream entryStream = sizeLimit.wrap(zipFile.getInputStream(zipEntry))) {
+          robotXmlParser.parse(entryStream);
+        }
+      }
       if (!importIntoExistingLaunch) {
         finishLaunch(launchUuid, projectName, robotXmlParser.getHighestTime());
         updateStartTime(launchUuid, robotXmlParser.getLowestTime());
       }
       return launchUuid;
     } catch (Exception e) {
-      LOGGER.error("Failed to import Robot ZIP file '{}' into launch '{}' for project '{}'",
+      log.error("Failed to import Robot ZIP file '{}' into launch '{}' for project '{}'",
           file.getOriginalFilename(), launchUuid, projectName, e);
-      if (!importIntoExistingLaunch) {
+      if (launchStarted) {
         updateBrokenLaunch(launchUuid);
       }
       throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, cleanMessage(e));
@@ -93,16 +124,8 @@ public class ZipImportStrategy extends AbstractImportStrategy {
       try {
         Files.deleteIfExists(zip.getAbsoluteFile().toPath());
       } catch (IOException e) {
-        LOGGER.warn("Failed to delete temporary ZIP file '{}'", zip.getAbsolutePath(), e);
+        log.warn("Failed to delete temporary ZIP file '{}'", zip.getAbsolutePath(), e);
       }
-    }
-  }
-
-  private InputStream getEntryStream(ZipFile file, ZipEntry zipEntry) {
-    try {
-      return file.getInputStream(zipEntry);
-    } catch (IOException e) {
-      throw new ReportPortalException(ErrorType.IMPORT_FILE_ERROR, e.getMessage());
     }
   }
 
