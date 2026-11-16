@@ -52,6 +52,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(awk -F= '/^version=/{print $2; exit}' gradle.properties | tr -d '[:space:]')
+          VERSION=$(awk -F= '/^version=/{print $2; exit}' plugin-robot/gradle.properties | tr -d '[:space:]')
+          if [ -z "$VERSION" ]; then
+            echo "::error::version property is missing in plugin-robot/gradle.properties"
+            exit 1
+          fi
           gh release create "$VERSION" --title "Release $VERSION" --generate-notes
 
