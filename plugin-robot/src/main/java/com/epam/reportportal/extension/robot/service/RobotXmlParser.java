@@ -29,31 +29,32 @@ import static com.epam.reportportal.extension.robot.service.RobotReportTag.SUITE
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TAG;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.TEST;
 import static com.epam.reportportal.extension.robot.service.RobotReportTag.fromString;
-import static com.epam.ta.reportportal.entity.enums.TestItemIssueGroup.NOT_ISSUE_FLAG;
+import static com.epam.reportportal.base.infrastructure.persistence.entity.enums.TestItemIssueGroup.NOT_ISSUE_FLAG;
 import static java.lang.Boolean.TRUE;
 import static org.springframework.http.MediaType.IMAGE_GIF_VALUE;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
 import static org.springframework.http.MediaType.IMAGE_PNG_VALUE;
 
-import com.epam.reportportal.events.FinishItemRqEvent;
-import com.epam.reportportal.events.SaveLogRqEvent;
-import com.epam.reportportal.events.StartChildItemRqEvent;
-import com.epam.reportportal.events.StartRootItemRqEvent;
 import com.epam.reportportal.extension.robot.model.ItemInfo;
 import com.epam.reportportal.extension.robot.utils.DateUtils;
 import com.epam.reportportal.extension.robot.utils.DocumentBuilderInitializer;
 import com.epam.reportportal.extension.robot.utils.RobotMapper;
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.entity.enums.StatusEnum;
-import com.epam.ta.reportportal.entity.enums.TestItemTypeEnum;
-import com.epam.ta.reportportal.ws.reporting.FinishTestItemRQ;
-import com.epam.ta.reportportal.ws.reporting.Issue;
-import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
-import com.epam.ta.reportportal.ws.reporting.SaveLogRQ;
-import com.epam.ta.reportportal.ws.reporting.SaveLogRQ.File;
-import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
+import com.epam.reportportal.base.infrastructure.events.FinishItemRqEvent;
+import com.epam.reportportal.base.infrastructure.events.SaveLogRqEvent;
+import com.epam.reportportal.base.infrastructure.events.StartChildItemRqEvent;
+import com.epam.reportportal.base.infrastructure.events.StartRootItemRqEvent;
+import com.epam.reportportal.base.infrastructure.persistence.entity.enums.StatusEnum;
+import com.epam.reportportal.base.infrastructure.persistence.entity.enums.TestItemTypeEnum;
+import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
+import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
+import com.epam.reportportal.base.reporting.FinishTestItemRQ;
+import com.epam.reportportal.base.reporting.Issue;
+import com.epam.reportportal.base.reporting.ItemAttributesRQ;
+import com.epam.reportportal.base.reporting.SaveLogRQ;
+import com.epam.reportportal.base.reporting.SaveLogRQ.File;
+import com.epam.reportportal.base.reporting.StartTestItemRQ;
 import com.google.common.collect.Lists;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -71,7 +72,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -265,20 +265,20 @@ public class RobotXmlParser {
             file.get().getContent());
       }
     }
-    eventPublisher.publishEvent(new SaveLogRqEvent(this, projectName, saveLogRQ, multipartFile));
+    eventPublisher.publishEvent(new SaveLogRqEvent(projectName, saveLogRQ, multipartFile));
 
   }
 
   private String startRootItem(ItemInfo suite) {
     StartTestItemRQ rq = buildStartItemRq(suite);
-    eventPublisher.publishEvent(new StartRootItemRqEvent(this, projectName, rq));
+    eventPublisher.publishEvent(new StartRootItemRqEvent(projectName, rq));
     return rq.getUuid();
   }
 
   private String startTestItem(ItemInfo itemInfo) {
     StartTestItemRQ rq = buildStartItemRq(itemInfo);
     eventPublisher.publishEvent(
-        new StartChildItemRqEvent(this, projectName, items.peek().getUuid(), rq));
+        new StartChildItemRqEvent(projectName, items.peek().getUuid(), rq));
     return rq.getUuid();
   }
 
@@ -308,7 +308,7 @@ public class RobotXmlParser {
       Instant endTime = itemInfo.getEndTime();
       rq.setEndTime(endTime);
       rq.setLaunchUuid(launchUuid);
-      eventPublisher.publishEvent(new FinishItemRqEvent(this, projectName, itemInfo.getUuid(), rq));
+      eventPublisher.publishEvent(new FinishItemRqEvent(projectName, itemInfo.getUuid(), rq));
       if (endTime.isAfter(highestTime)) {
         highestTime = endTime;
       }

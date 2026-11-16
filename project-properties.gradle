@@ -1,9 +1,9 @@
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
-    pluginsDir = "$buildDir/jars"
+    pluginsDir = layout.buildDirectory.dir("jars").get().asFile.path
 
 }
 
 wrapper {
-    gradleVersion = '8.10.2'
+    gradleVersion = '9.3.1'
 }

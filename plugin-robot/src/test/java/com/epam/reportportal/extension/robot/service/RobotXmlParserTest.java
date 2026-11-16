@@ -22,11 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
-import com.epam.reportportal.events.StartChildItemRqEvent;
-import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.ws.reporting.ItemAttributesRQ;
-import com.epam.ta.reportportal.ws.reporting.StartTestItemRQ;
+import com.epam.reportportal.base.infrastructure.events.StartChildItemRqEvent;
+import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
+import com.epam.reportportal.base.reporting.ItemAttributesRQ;
+import com.epam.reportportal.base.reporting.StartTestItemRQ;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -52,7 +53,7 @@ class RobotXmlParserTest {
     doAnswer(invocation -> {
       Object event = invocation.getArgument(0);
       if (event instanceof StartChildItemRqEvent e) {
-        captured.add(e.getStartTestItemRQ());
+        captured.add(e.getStartTestItemRq());
       }
       return null;
     }).when(eventPublisher).publishEvent(any());

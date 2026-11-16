@@ -11,11 +11,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.events.FinishLaunchRqEvent;
-import com.epam.reportportal.events.StartLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.events.FinishLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.events.StartLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.persistence.entity.launch.Launch;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.ta.reportportal.dao.LaunchRepository;
-import com.epam.ta.reportportal.entity.launch.Launch;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -67,7 +67,7 @@ class ZipImportStrategyTest {
         .orElseThrow();
 
     verify(launchRepository, times(1)).save(any());
-    assertNotEquals(Instant.EPOCH, finishLaunchRqEvent.getFinishExecutionRQ().getEndTime());
+    assertNotEquals(Instant.EPOCH, finishLaunchRqEvent.getFinishExecutionRq().getEndTime());
   }
 
   @Test

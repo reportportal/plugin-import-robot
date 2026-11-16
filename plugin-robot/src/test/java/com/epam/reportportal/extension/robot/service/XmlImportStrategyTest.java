@@ -27,11 +27,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.events.FinishLaunchRqEvent;
-import com.epam.reportportal.events.StartLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.events.FinishLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.events.StartLaunchRqEvent;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.persistence.entity.launch.Launch;
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.ta.reportportal.dao.LaunchRepository;
-import com.epam.ta.reportportal.entity.launch.Launch;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +80,7 @@ class XmlImportStrategyTest {
         .orElseThrow();
 
     verify(launchRepository, times(1)).save(any());
-    assertNotEquals(Instant.EPOCH, finishLaunchRqEvent.getFinishExecutionRQ().getEndTime());
+    assertNotEquals(Instant.EPOCH, finishLaunchRqEvent.getFinishExecutionRq().getEndTime());
   }
 
   @Test
@@ -121,4 +121,3 @@ class XmlImportStrategyTest {
         .collect(Collectors.toList());
   }
 }
-

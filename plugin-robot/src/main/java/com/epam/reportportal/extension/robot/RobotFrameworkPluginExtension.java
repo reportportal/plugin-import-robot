@@ -5,20 +5,24 @@ import static com.epam.reportportal.extension.util.CommonConstants.DESCRIPTION_K
 import static com.epam.reportportal.extension.util.CommonConstants.IS_INTEGRATIONS_ALLOWED;
 import static com.epam.reportportal.extension.util.CommonConstants.METADATA;
 
+import com.epam.reportportal.base.core.events.domain.PluginUploadedEvent;
+import com.epam.reportportal.base.infrastructure.persistence.dao.IntegrationRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.IntegrationTypeRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.ProjectRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.ProjectUserRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.organization.OrganizationRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.organization.OrganizationUserRepository;
 import com.epam.reportportal.extension.CommonPluginCommand;
 import com.epam.reportportal.extension.IntegrationGroupEnum;
 import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
+import com.epam.reportportal.extension.command.ExtensionCommand;
 import com.epam.reportportal.extension.common.IntegrationTypeProperties;
-import com.epam.reportportal.extension.event.PluginEvent;
 import com.epam.reportportal.extension.robot.command.RobotImportCommand;
-import com.epam.reportportal.extension.robot.event.plugin.PluginEventHandlerFactory;
-import com.epam.reportportal.extension.robot.event.plugin.PluginEventListener;
+import com.epam.reportportal.extension.robot.event.plugin.PluginLoadedEventHandler;
 import com.epam.reportportal.extension.robot.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.epam.ta.reportportal.dao.IntegrationRepository;
-import com.epam.ta.reportportal.dao.IntegrationTypeRepository;
-import com.epam.ta.reportportal.dao.LaunchRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -49,10 +53,13 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
 
   private static final String PLUGIN_NAME = "Robot Framework";
 
-  private final Supplier<Map<String, PluginCommand>> pluginCommandMapping = new MemoizingSupplier<>(
-      this::getCommands);
+  private final Supplier<Map<String, ExtensionCommand<?>>> pluginCommandMapping =
+      new MemoizingSupplier<>(this::getIntegrationExtensionCommands);
+  private final Supplier<Map<String, ExtensionCommand<?>>> commonPluginCommandMapping =
+      new MemoizingSupplier<>(this::getCommonExtensionCommands);
+
   private final String resourcesDir;
-  private final Supplier<ApplicationListener<PluginEvent>> pluginLoadedListener;
+  private final Supplier<ApplicationListener<PluginUploadedEvent>> pluginLoadedListenerSupplier;
   private final Supplier<RequestEntityConverter> requestEntityConverterSupplier = new MemoizingSupplier<>(
       this::createRequestEntityConverter);
   @Autowired
@@ -63,21 +70,27 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
   private LaunchRepository launchRepository;
   @Autowired
   private ApplicationEventPublisher eventPublisher;
-  private final Supplier<Map<String, CommonPluginCommand<?>>> commonPluginCommandMapping = new MemoizingSupplier<>(
-      this::getCommonCommands);
   @Autowired
   private ApplicationContext applicationContext;
+  @Autowired
+  private ProjectRepository projectRepository;
+  @Autowired
+  private OrganizationUserRepository organizationUserRepository;
+  @Autowired
+  private OrganizationRepository organizationRepository;
+  @Autowired
+  private ProjectUserRepository projectUserRepository;
   @Autowired
   private ObjectMapper objectMapper;
 
   public RobotFrameworkPluginExtension(Map<String, Object> initParams) {
     resourcesDir = IntegrationTypeProperties.RESOURCES_DIRECTORY.getValue(initParams)
-        .map(String::valueOf).orElse("");
+        .map(String::valueOf)
+        .orElse("");
 
-    pluginLoadedListener = new MemoizingSupplier<>(() -> new PluginEventListener(PLUGIN_ID,
-        new PluginEventHandlerFactory(resourcesDir, integrationTypeRepository,
-            integrationRepository)
-    ));
+    pluginLoadedListenerSupplier = new MemoizingSupplier<>(
+        () -> new PluginLoadedEventHandler(PLUGIN_ID, resourcesDir, integrationTypeRepository,
+            integrationRepository));
   }
 
   private RequestEntityConverter createRequestEntityConverter() {
@@ -94,7 +107,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
         AbstractApplicationContext.APPLICATION_EVENT_MULTICASTER_BEAN_NAME,
         ApplicationEventMulticaster.class
     );
-    applicationEventMulticaster.addApplicationListener(pluginLoadedListener.get());
+    applicationEventMulticaster.addApplicationListener(pluginLoadedListenerSupplier.get());
   }
 
   @Override
@@ -107,7 +120,7 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
         AbstractApplicationContext.APPLICATION_EVENT_MULTICASTER_BEAN_NAME,
         ApplicationEventMulticaster.class
     );
-    applicationEventMulticaster.removeApplicationListener(pluginLoadedListener.get());
+    applicationEventMulticaster.removeApplicationListener(pluginLoadedListenerSupplier.get());
   }
 
   @Override
@@ -127,12 +140,12 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
 
   @Override
   public CommonPluginCommand getCommonCommand(String commandName) {
-    return commonPluginCommandMapping.get().get(commandName);
+    return null;
   }
 
   @Override
   public PluginCommand getIntegrationCommand(String commandName) {
-    return pluginCommandMapping.get().get(commandName);
+    return null;
   }
 
   @Override
@@ -140,14 +153,12 @@ public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint
     return IntegrationGroupEnum.IMPORT;
   }
 
-  private Map<String, PluginCommand> getCommands() {
-    return new HashMap<>();
-  }
-
-  private Map<String, CommonPluginCommand<?>> getCommonCommands() {
-    HashMap<String, CommonPluginCommand<?>> pluginCommands = new HashMap<>();
+  @Override
+  public Map<String, ExtensionCommand<?>> getCommonExtensionCommands() {
+    HashMap<String, ExtensionCommand<?>> pluginCommands = new HashMap<>();
     var robotImportCommand = new RobotImportCommand(requestEntityConverterSupplier.get(),
-        eventPublisher, launchRepository);
+        eventPublisher, launchRepository, projectRepository, organizationUserRepository,
+        organizationRepository, projectUserRepository);
     pluginCommands.put(robotImportCommand.getName(), robotImportCommand);
     return pluginCommands;
   }

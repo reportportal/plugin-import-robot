@@ -19,9 +19,9 @@ package com.epam.reportportal.extension.robot.service;
 import static com.epam.reportportal.extension.robot.service.FileExtensionConstant.XML_EXTENSION;
 
 import com.epam.reportportal.extension.robot.model.LaunchImportRQ;
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LaunchRepository;
+import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
+import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.UUID;
