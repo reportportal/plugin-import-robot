@@ -71,6 +71,5 @@ jobs:
       id-token: write
       contents: read
     with:
-      registry_url: https://dev.marketplace.reportportal.io
       libs_dir: plugin-robot/build/libs
       properties_file: plugin-robot/gradle.properties
