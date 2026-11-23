@@ -46,7 +46,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class RobotFrameworkPluginExtension implements ReportPortalExtensionPoint, DisposableBean {
 
   public static final String BINARY_DATA_PROPERTIES_FILE_ID = "binary-data.properties";
-  private static final String PLUGIN_ID = "robot-framework";
+  private static final String PLUGIN_ID = "plugin-import-robot";
   private static final String DESCRIPTION = "Reinforce your ReportPortal instance with RobotFramework Import functionality and easily upload your log files right to ReportPortal.";
 
   private static final String NAME_FIELD = "name";
