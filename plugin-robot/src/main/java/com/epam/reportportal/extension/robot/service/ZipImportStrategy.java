@@ -15,6 +15,7 @@
  */
 package com.epam.reportportal.extension.robot.service;
 
+import static com.epam.reportportal.extension.robot.command.RobotImportCommand.MAX_FILE_SIZE;
 import static com.epam.reportportal.extension.robot.service.FileExtensionConstant.XML_EXTENSION;
 import static com.epam.reportportal.extension.robot.service.FileExtensionConstant.ZIP_EXTENSION;
 
@@ -49,7 +50,6 @@ public class ZipImportStrategy extends AbstractImportStrategy {
    * screenshots).
    */
   static final int MAX_ENTRIES = 10_000;
-  static final long MAX_UNCOMPRESSED_BYTES = 512L * 1024 * 1024;
 
   private static final Predicate<ZipEntry> isFile = zipEntry -> !zipEntry.isDirectory();
   private static final Predicate<ZipEntry> isXml = zipEntry -> zipEntry.getName()
@@ -64,7 +64,7 @@ public class ZipImportStrategy extends AbstractImportStrategy {
 
   public ZipImportStrategy(ApplicationEventPublisher eventPublisher,
       LaunchRepository launchRepository) {
-    this(eventPublisher, launchRepository, MAX_ENTRIES, MAX_UNCOMPRESSED_BYTES);
+    this(eventPublisher, launchRepository, MAX_ENTRIES, MAX_FILE_SIZE);
   }
 
   ZipImportStrategy(ApplicationEventPublisher eventPublisher, LaunchRepository launchRepository,
